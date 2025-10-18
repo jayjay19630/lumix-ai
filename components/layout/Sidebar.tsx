@@ -21,8 +21,8 @@ export function Sidebar() {
       <div className="flex h-16 items-center gap-2 px-6 border-b border-gray-200">
         <Sparkles className="h-8 w-8 text-indigo-600" />
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Lumix</h1>
-          <p className="text-xs text-gray-500">Teaching brilliance, powered by AI</p>
+          <h1 className="text-xl font-bold text-gray-900">Lumix AI</h1>
+          <p className="text-xs text-gray-500">Teaching brilliance</p>
         </div>
       </div>
 
