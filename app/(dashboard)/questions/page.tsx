@@ -1,9 +1,15 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Upload, Plus, Search } from "lucide-react";
 import { cn, getDifficultyColor } from "@/lib/utils";
+import { UploadModal } from "@/components/questions/UploadModal";
+import { QuestionDetailModal } from "@/components/questions/QuestionDetailModal";
+import type { Question } from "@/lib/types";
 
-// Mock data - will be replaced with real data from DynamoDB
+// Mock data fallback
 const mockQuestions = [
   {
     question_id: "1",
@@ -61,9 +67,63 @@ const mockQuestions = [
   },
 ];
 
-const topics = Array.from(new Set(mockQuestions.map((q) => q.topic)));
-
 export default function QuestionsPage() {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [topicFilter, setTopicFilter] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState("");
+
+  // Fetch questions from API
+  useEffect(() => {
+    fetchQuestions();
+  }, []);
+
+  const fetchQuestions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/questions");
+      const data = await response.json();
+
+      if (data.success && data.data.questions) {
+        setQuestions(data.data.questions);
+      } else {
+        // Use mock data as fallback
+        setQuestions(mockQuestions as Question[]);
+      }
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      // Use mock data as fallback
+      setQuestions(mockQuestions as Question[]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadComplete = (questionCount: number) => {
+    console.log(`Upload complete: ${questionCount} questions added`);
+    // Refresh questions list
+    fetchQuestions();
+  };
+
+  const handleQuestionClick = (question: Question) => {
+    setSelectedQuestion(question);
+    setDetailModalOpen(true);
+  };
+
+  // Filter questions
+  const filteredQuestions = questions.filter((q) => {
+    const matchesSearch = q.text.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTopic = !topicFilter || q.topic === topicFilter;
+    const matchesDifficulty = !difficultyFilter || q.difficulty === difficultyFilter;
+    return matchesSearch && matchesTopic && matchesDifficulty;
+  });
+
+  const topics = Array.from(new Set(questions.map((q) => q.topic)));
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -75,7 +135,7 @@ export default function QuestionsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setUploadModalOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Upload Paper
           </Button>
@@ -95,10 +155,16 @@ export default function QuestionsPage() {
               <input
                 type="text"
                 placeholder="Search questions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <select
+              value={topicFilter}
+              onChange={(e) => setTopicFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
               <option value="">All Topics</option>
               {topics.map((topic) => (
                 <option key={topic} value={topic}>
@@ -106,7 +172,11 @@ export default function QuestionsPage() {
                 </option>
               ))}
             </select>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <select
+              value={difficultyFilter}
+              onChange={(e) => setDifficultyFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
               <option value="">All Difficulties</option>
               <option value="Easy">Easy</option>
               <option value="Medium">Medium</option>
@@ -117,43 +187,73 @@ export default function QuestionsPage() {
       </Card>
 
       {/* Questions List */}
-      <div className="space-y-3">
-        {mockQuestions.map((question) => (
-          <Card
-            key={question.question_id}
-            className="hover:shadow-md transition-shadow cursor-pointer"
-          >
-            <CardContent className="p-4">
-              <div className="flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span
-                      className={cn(
-                        "px-2 py-1 rounded text-xs font-medium",
-                        getDifficultyColor(question.difficulty)
-                      )}
-                    >
-                      {question.difficulty}
-                    </span>
-                    <span className="text-xs text-gray-500">{question.topic}</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-gray-500">{question.source}</span>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-500">Loading questions...</div>
+        </div>
+      ) : filteredQuestions.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-gray-500">
+              {questions.length === 0
+                ? "No questions yet. Upload a paper to get started!"
+                : "No questions match your filters."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {filteredQuestions.map((question) => (
+            <Card
+              key={question.question_id}
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleQuestionClick(question)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className={cn(
+                          "px-2 py-1 rounded text-xs font-medium",
+                          getDifficultyColor(question.difficulty)
+                        )}
+                      >
+                        {question.difficulty}
+                      </span>
+                      <span className="text-xs text-gray-500">{question.topic}</span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-500">{question.source}</span>
+                    </div>
+                    <p className="text-sm text-gray-900 font-medium">{question.text}</p>
                   </div>
-                  <p className="text-sm text-gray-900 font-medium">{question.text}</p>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="text-xs text-gray-500">
+                      Used: {question.times_used} times
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Success: {question.success_rate}%
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <div className="text-xs text-gray-500">
-                    Used: {question.times_used} times
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Success: {question.success_rate}%
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      <UploadModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUploadComplete={handleUploadComplete}
+      />
+
+      <QuestionDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => setDetailModalOpen(false)}
+        question={selectedQuestion}
+      />
     </div>
   );
 }
