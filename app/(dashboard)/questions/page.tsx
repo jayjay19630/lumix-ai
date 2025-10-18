@@ -1,0 +1,159 @@
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Upload, Plus, Search } from "lucide-react";
+import { cn, getDifficultyColor } from "@/lib/utils";
+
+// Mock data - will be replaced with real data from DynamoDB
+const mockQuestions = [
+  {
+    question_id: "1",
+    text: "Solve for x: 2x² + 5x - 3 = 0",
+    topic: "Quadratic Equations",
+    difficulty: "Medium" as const,
+    source: "2023 Midterm Exam",
+    times_used: 12,
+    success_rate: 68,
+  },
+  {
+    question_id: "2",
+    text: "Find the value of sin(45°) + cos(45°)",
+    topic: "Trigonometry",
+    difficulty: "Easy" as const,
+    source: "Practice Set A",
+    times_used: 25,
+    success_rate: 85,
+  },
+  {
+    question_id: "3",
+    text: "Prove that the sum of angles in a triangle equals 180°",
+    topic: "Geometry",
+    difficulty: "Hard" as const,
+    source: "2024 Final Exam",
+    times_used: 8,
+    success_rate: 45,
+  },
+  {
+    question_id: "4",
+    text: "Simplify: 3x + 2y - 5x + 4y",
+    topic: "Linear Equations",
+    difficulty: "Easy" as const,
+    source: "Homework Set 3",
+    times_used: 18,
+    success_rate: 92,
+  },
+  {
+    question_id: "5",
+    text: "Find the derivative of f(x) = 3x³ - 2x² + 5x - 1",
+    topic: "Functions",
+    difficulty: "Medium" as const,
+    source: "Practice Set B",
+    times_used: 14,
+    success_rate: 72,
+  },
+  {
+    question_id: "6",
+    text: "Calculate the area of a circle with radius 7cm",
+    topic: "Geometry",
+    difficulty: "Easy" as const,
+    source: "Quiz 2",
+    times_used: 22,
+    success_rate: 88,
+  },
+];
+
+const topics = Array.from(new Set(mockQuestions.map((q) => q.topic)));
+
+export default function QuestionsPage() {
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Question Bank</h1>
+          <p className="text-gray-500 mt-1">
+            Manage and organize your teaching questions
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Paper
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Question
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex gap-4 items-center">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search questions..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">All Topics</option>
+              {topics.map((topic) => (
+                <option key={topic} value={topic}>
+                  {topic}
+                </option>
+              ))}
+            </select>
+            <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">All Difficulties</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Questions List */}
+      <div className="space-y-3">
+        {mockQuestions.map((question) => (
+          <Card
+            key={question.question_id}
+            className="hover:shadow-md transition-shadow cursor-pointer"
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className={cn(
+                        "px-2 py-1 rounded text-xs font-medium",
+                        getDifficultyColor(question.difficulty)
+                      )}
+                    >
+                      {question.difficulty}
+                    </span>
+                    <span className="text-xs text-gray-500">{question.topic}</span>
+                    <span className="text-xs text-gray-400">•</span>
+                    <span className="text-xs text-gray-500">{question.source}</span>
+                  </div>
+                  <p className="text-sm text-gray-900 font-medium">{question.text}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <div className="text-xs text-gray-500">
+                    Used: {question.times_used} times
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Success: {question.success_rate}%
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
