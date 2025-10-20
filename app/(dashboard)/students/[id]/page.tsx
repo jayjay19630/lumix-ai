@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { UploadModal } from "@/components/questions/UploadModal";
+import { GradingResultModal } from "@/components/students/GradingResultModal";
 import {
   ArrowLeft,
   Upload,
@@ -28,6 +29,7 @@ export default function StudentDetailPage({
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
   useEffect(() => {
     fetchStudentData();
@@ -267,16 +269,28 @@ export default function StudentDetailPage({
                           </p>
                         )}
                       </div>
-                      {session.graded_worksheet_url && (
-                        <a
-                          href={session.graded_worksheet_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                        >
-                          View
-                        </a>
-                      )}
+                      <div className="flex gap-2">
+                        {session.grading_result && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedSession(session)}
+                            className="text-indigo-600 hover:text-indigo-700"
+                          >
+                            View Results
+                          </Button>
+                        )}
+                        {session.graded_worksheet_url && (
+                          <a
+                            href={session.graded_worksheet_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-gray-600 hover:text-gray-700 font-medium px-3 py-1.5"
+                          >
+                            Worksheet
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -294,6 +308,17 @@ export default function StudentDetailPage({
         studentName={student.name}
         onUploadComplete={handleUploadComplete}
       />
+
+      {/* Grading Result Modal */}
+      {selectedSession?.grading_result && (
+        <GradingResultModal
+          isOpen={!!selectedSession}
+          onClose={() => setSelectedSession(null)}
+          gradingResult={selectedSession.grading_result}
+          studentName={student.name}
+          date={selectedSession.date}
+        />
+      )}
     </div>
   );
 }

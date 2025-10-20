@@ -87,6 +87,7 @@ export interface Session {
   questions_attempted: string[]; // question_ids
   score?: string; // e.g., "8/10"
   graded_worksheet_url?: string; // S3 URL
+  grading_result?: GradingResult; // Detailed grading results
   tutor_notes?: string;
   agent_insights?: string;
   created_at: string;

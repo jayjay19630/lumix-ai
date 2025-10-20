@@ -89,6 +89,7 @@ export async function POST(
       ),
       score: gradingResult.score,
       graded_worksheet_url: worksheetUrl,
+      grading_result: gradingResult, // Save full grading details
       agent_insights: gradingResult.insights,
       created_at: new Date().toISOString(),
     };
@@ -108,6 +109,24 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Strip markdown code blocks from response
+ */
+function stripMarkdownCodeBlocks(text: string): string {
+  // Remove markdown code blocks like ```json ... ```
+  let cleaned = text.trim();
+
+  // Check if text starts with ```json or ``` and ends with ```
+  if (cleaned.startsWith("```")) {
+    // Remove opening ```json or ```
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "");
+    // Remove closing ```
+    cleaned = cleaned.replace(/\n?```\s*$/, "");
+  }
+
+  return cleaned.trim();
 }
 
 /**
@@ -159,7 +178,9 @@ Only return valid JSON, no additional text.`;
       maxTokens: 4096,
     });
 
-    const parsed = JSON.parse(response.trim());
+    // Strip markdown code blocks if present
+    const cleanedResponse = stripMarkdownCodeBlocks(response);
+    const parsed = JSON.parse(cleanedResponse);
     return parsed;
   } catch (error) {
     console.error("Error grading with AI:", error);
