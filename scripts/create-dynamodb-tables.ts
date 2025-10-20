@@ -138,6 +138,24 @@ async function createAllTables(): Promise<void> {
     ],
   });
 
+  // Session Schedules Table (Recurring schedules)
+  await createTable({
+    TableName: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
+    KeySchema: [{ AttributeName: "schedule_id", KeyType: "HASH" }],
+    AttributeDefinitions: [
+      { AttributeName: "schedule_id", AttributeType: "S" },
+      { AttributeName: "student_id", AttributeType: "S" },
+    ],
+    BillingMode: "PAY_PER_REQUEST",
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "StudentIndex",
+        KeySchema: [{ AttributeName: "student_id", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+    ],
+  });
+
   console.log("\n✓ All tables created successfully!");
 }
 

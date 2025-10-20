@@ -6,18 +6,23 @@ export interface Student {
   email?: string;
   phone?: string;
   accuracy: Record<string, number>; // { "topic": accuracy_percentage }
-  schedule: SessionSchedule[];
   last_session?: string; // ISO date
   next_session?: string; // ISO date
   created_at: string;
   updated_at: string;
 }
 
-export interface SessionSchedule {
-  day: string; // e.g., "Monday"
-  time: string; // e.g., "14:00"
+// Recurring Session Schedule (separate table)
+export interface RecurringSessionSchedule {
+  schedule_id: string;
+  student_id: string;
+  day_of_week: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  time: string; // e.g., "14:00" (24-hour format)
   duration: number; // minutes
   focus_topics: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // Question Types

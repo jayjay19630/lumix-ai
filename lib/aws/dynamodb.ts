@@ -10,7 +10,7 @@ import {
   ScanCommandInput,
   QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import type { Student, Question, LessonPlan, Session } from "../types";
+import type { Student, Question, LessonPlan, Session, RecurringSessionSchedule } from "../types";
 
 // Initialize DynamoDB Client
 const dynamoClient = new DynamoDBClient({
@@ -35,6 +35,7 @@ const TABLES = {
   QUESTIONS: process.env.DYNAMODB_QUESTIONS_TABLE || "lumix-questions",
   LESSONS: process.env.DYNAMODB_LESSONS_TABLE || "lumix-lesson-plans",
   SESSIONS: process.env.DYNAMODB_SESSIONS_TABLE || "lumix-sessions",
+  SESSION_SCHEDULES: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
 };
 
 // ============ Student Operations ============
@@ -336,6 +337,114 @@ export async function createSession(session: Session): Promise<Session> {
     return session;
   } catch (error) {
     console.error("Error creating session:", error);
+    throw error;
+  }
+}
+
+// ============ Session Schedule Operations ============
+
+export async function getSessionSchedule(scheduleId: string): Promise<RecurringSessionSchedule | null> {
+  try {
+    const command = new GetCommand({
+      TableName: TABLES.SESSION_SCHEDULES,
+      Key: { schedule_id: scheduleId },
+    });
+    const response = await docClient.send(command);
+    return (response.Item as RecurringSessionSchedule) || null;
+  } catch (error) {
+    console.error("Error getting session schedule:", error);
+    throw error;
+  }
+}
+
+export async function getSessionSchedulesByStudent(studentId: string): Promise<RecurringSessionSchedule[]> {
+  try {
+    const command = new QueryCommand({
+      TableName: TABLES.SESSION_SCHEDULES,
+      IndexName: "StudentIndex",
+      KeyConditionExpression: "student_id = :student_id",
+      ExpressionAttributeValues: {
+        ":student_id": studentId,
+      },
+    });
+    const response = await docClient.send(command);
+    return (response.Items as RecurringSessionSchedule[]) || [];
+  } catch (error) {
+    console.error("Error getting session schedules by student:", error);
+    throw error;
+  }
+}
+
+export async function getAllSessionSchedules(): Promise<RecurringSessionSchedule[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: TABLES.SESSION_SCHEDULES,
+    });
+    const response = await docClient.send(command);
+    return (response.Items as RecurringSessionSchedule[]) || [];
+  } catch (error) {
+    console.error("Error getting all session schedules:", error);
+    throw error;
+  }
+}
+
+export async function createSessionSchedule(schedule: RecurringSessionSchedule): Promise<RecurringSessionSchedule> {
+  try {
+    const command = new PutCommand({
+      TableName: TABLES.SESSION_SCHEDULES,
+      Item: schedule,
+    });
+    await docClient.send(command);
+    return schedule;
+  } catch (error) {
+    console.error("Error creating session schedule:", error);
+    throw error;
+  }
+}
+
+export async function updateSessionSchedule(
+  scheduleId: string,
+  updates: Partial<RecurringSessionSchedule>
+): Promise<RecurringSessionSchedule> {
+  try {
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, unknown> = {};
+
+    Object.entries(updates).forEach(([key, value], index) => {
+      if (key !== "schedule_id") {
+        updateExpressions.push(`#attr${index} = :val${index}`);
+        expressionAttributeNames[`#attr${index}`] = key;
+        expressionAttributeValues[`:val${index}`] = value;
+      }
+    });
+
+    const command = new UpdateCommand({
+      TableName: TABLES.SESSION_SCHEDULES,
+      Key: { schedule_id: scheduleId },
+      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    });
+
+    const response = await docClient.send(command);
+    return response.Attributes as RecurringSessionSchedule;
+  } catch (error) {
+    console.error("Error updating session schedule:", error);
+    throw error;
+  }
+}
+
+export async function deleteSessionSchedule(scheduleId: string): Promise<void> {
+  try {
+    const command = new DeleteCommand({
+      TableName: TABLES.SESSION_SCHEDULES,
+      Key: { schedule_id: scheduleId },
+    });
+    await docClient.send(command);
+  } catch (error) {
+    console.error("Error deleting session schedule:", error);
     throw error;
   }
 }

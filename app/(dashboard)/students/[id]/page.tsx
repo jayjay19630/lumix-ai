@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { UploadModal } from "@/components/questions/UploadModal";
 import { GradingResultModal } from "@/components/students/GradingResultModal";
+import { SessionScheduleModal } from "@/components/schedule/SessionScheduleModal";
 import {
   ArrowLeft,
   Upload,
@@ -15,8 +16,11 @@ import {
   TrendingUp,
   TrendingDown,
   Loader2,
+  Clock,
+  Plus,
+  Edit,
 } from "lucide-react";
-import type { Student, Session } from "@/lib/types";
+import type { Student, Session, RecurringSessionSchedule } from "@/lib/types";
 
 export default function StudentDetailPage({
   params,
@@ -27,9 +31,12 @@ export default function StudentDetailPage({
   const router = useRouter();
   const [student, setStudent] = useState<Student | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [schedules, setSchedules] = useState<RecurringSessionSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<RecurringSessionSchedule | null>(null);
 
   useEffect(() => {
     fetchStudentData();
@@ -39,13 +46,22 @@ export default function StudentDetailPage({
   const fetchStudentData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/students/${resolvedParams.id}`);
-      if (response.ok) {
-        const data = await response.json();
+      const [studentResponse, schedulesResponse] = await Promise.all([
+        fetch(`/api/students/${resolvedParams.id}`),
+        fetch(`/api/session-schedules?student_id=${resolvedParams.id}`),
+      ]);
+
+      if (studentResponse.ok) {
+        const data = await studentResponse.json();
         setStudent(data.student);
         setSessions(data.sessions || []);
-      } else if (response.status === 404) {
+      } else if (studentResponse.status === 404) {
         router.push("/students");
+      }
+
+      if (schedulesResponse.ok) {
+        const schedulesData = await schedulesResponse.json();
+        setSchedules(schedulesData.data || []);
       }
     } catch (error) {
       console.error("Error fetching student:", error);
@@ -63,6 +79,26 @@ export default function StudentDetailPage({
   const handleUploadComplete = () => {
     // Refresh student data after successful upload
     fetchStudentData();
+  };
+
+  const handleScheduleSave = () => {
+    // Refresh schedules after saving
+    fetchStudentData();
+  };
+
+  const handleCreateSchedule = () => {
+    setEditingSchedule(null);
+    setShowScheduleModal(true);
+  };
+
+  const handleEditSchedule = (schedule: RecurringSessionSchedule) => {
+    setEditingSchedule(schedule);
+    setShowScheduleModal(true);
+  };
+
+  const getDayName = (dayOfWeek: number) => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return days[dayOfWeek];
   };
 
   if (isLoading) {
@@ -211,6 +247,81 @@ export default function StudentDetailPage({
         </Card>
       )}
 
+      {/* Session Schedules */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Recurring Session Schedule</CardTitle>
+          <Button onClick={handleCreateSchedule} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Schedule
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {schedules.length === 0 ? (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">No recurring schedules set</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Create a schedule to define when this student has sessions
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {schedules
+                .sort((a, b) => a.day_of_week - b.day_of_week)
+                .map((schedule) => (
+                  <div
+                    key={schedule.schedule_id}
+                    className={`border rounded-lg p-4 ${
+                      schedule.is_active
+                        ? "border-gray-200 bg-white"
+                        : "border-gray-200 bg-gray-50 opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Clock className="h-5 w-5 text-indigo-600" />
+                          <p className="font-medium text-gray-900">
+                            {getDayName(schedule.day_of_week)}s at {schedule.time}
+                          </p>
+                          {!schedule.is_active && (
+                            <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-medium rounded">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 ml-8">
+                          {schedule.duration} minutes
+                        </p>
+                        {schedule.focus_topics.length > 0 && (
+                          <div className="flex flex-wrap gap-2 ml-8 mt-2">
+                            {schedule.focus_topics.map((topic) => (
+                              <span
+                                key={topic}
+                                className="text-xs px-2 py-1 bg-indigo-50 text-indigo-600 rounded"
+                              >
+                                {topic}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditSchedule(schedule)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Session History */}
       <Card>
         <CardHeader>
@@ -319,6 +430,19 @@ export default function StudentDetailPage({
           date={selectedSession.date}
         />
       )}
+
+      {/* Session Schedule Modal */}
+      <SessionScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => {
+          setShowScheduleModal(false);
+          setEditingSchedule(null);
+        }}
+        studentId={resolvedParams.id}
+        studentName={student.name}
+        existingSchedule={editingSchedule}
+        onSave={handleScheduleSave}
+      />
     </div>
   );
 }

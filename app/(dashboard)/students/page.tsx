@@ -174,18 +174,6 @@ export default function StudentsPage() {
                           </p>
                         </div>
                       )}
-
-                      {/* Next Session */}
-                      {student.next_session && (
-                        <div className="pt-2 border-t border-gray-100">
-                          <p className="text-xs text-gray-500">
-                            Next session:{" "}
-                            <span className="text-gray-900 font-medium">
-                              {new Date(student.next_session).toLocaleDateString()}
-                            </span>
-                          </p>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
