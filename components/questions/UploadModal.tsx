@@ -6,47 +6,112 @@ import { Button } from "@/components/ui/Button";
 import { Upload, FileText, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type UploadMode = "questions" | "grading";
+
+interface QuestionUploadResult {
+  questionCount: number;
+  questions?: unknown[];
+}
+
+interface GradingUploadResult {
+  total_questions: number;
+  correct_answers: number;
+  score: string;
+  weaknesses: string[];
+  insights: string;
+}
+
+type UploadResult = QuestionUploadResult | GradingUploadResult | null;
+
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUploadComplete?: (questionCount: number) => void;
+  mode?: UploadMode;
+  title?: string;
+  description?: string;
+  studentId?: string;
+  studentName?: string;
+  onUploadComplete?: (data: unknown) => void;
 }
 
 type UploadStatus = "idle" | "uploading" | "processing" | "success" | "error";
 
-export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalProps) {
+export function UploadModal({
+  isOpen,
+  onClose,
+  mode = "questions",
+  title,
+  description,
+  studentId,
+  studentName,
+  onUploadComplete,
+}: UploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
-  const [questionCount, setQuestionCount] = useState(0);
+  const [result, setResult] = useState<UploadResult>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (selectedFile: File | null) => {
+    if (!selectedFile) return;
+
+    // Validate file type
+    const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+    if (!validTypes.includes(selectedFile.type)) {
+      setMessage("Please upload a PDF or image file (JPG, PNG)");
+      setStatus("error");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setMessage("File size must be less than 10MB");
+      setStatus("error");
+      return;
+    }
+
+    setFile(selectedFile);
+    setStatus("idle");
+    setMessage("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      // Validate file type
-      const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
-      if (!validTypes.includes(selectedFile.type)) {
-        setMessage("Please upload a PDF or image file (JPG, PNG)");
-        setStatus("error");
-        return;
-      }
+    handleFileChange(selectedFile || null);
+  };
 
-      // Validate file size (max 10MB)
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        setMessage("File size must be less than 10MB");
-        setStatus("error");
-        return;
-      }
+  // Drag and drop handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
 
-      setFile(selectedFile);
-      setStatus("idle");
-      setMessage("");
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      handleFileChange(droppedFile);
     }
   };
 
-  const handleUpload = async () => {
+  const handleUploadQuestions = async () => {
     if (!file) return;
 
     setStatus("uploading");
@@ -91,14 +156,14 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
       const processData = await processResponse.json();
       setProgress(100);
       setStatus("success");
-      setQuestionCount(processData.data.questionCount || 0);
+      setResult(processData.data);
       setMessage(
         `Successfully processed ${processData.data.questionCount} questions!`
       );
 
       // Call completion callback
       if (onUploadComplete) {
-        onUploadComplete(processData.data.questionCount || 0);
+        onUploadComplete(processData.data);
       }
 
       // Auto-close after 2 seconds
@@ -114,34 +179,110 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
     }
   };
 
+  const handleUploadGradedWorksheet = async () => {
+    if (!file || !studentId) return;
+
+    setStatus("uploading");
+    setProgress(10);
+    setMessage("Uploading worksheet...");
+
+    try {
+      const formData = new FormData();
+      formData.append("worksheet", file);
+
+      const response = await fetch(`/api/students/${studentId}/grade`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to grade worksheet");
+      }
+
+      setProgress(50);
+      setMessage("Processing with OCR...");
+      setStatus("processing");
+
+      const data = await response.json();
+      setProgress(100);
+      setStatus("success");
+      setResult(data.grading_result);
+      setMessage(`Graded successfully: ${data.grading_result.score}`);
+
+      // Call completion callback
+      if (onUploadComplete) {
+        onUploadComplete(data);
+      }
+
+      // Auto-close after 3 seconds to show results
+      setTimeout(() => {
+        handleClose();
+      }, 3000);
+    } catch (error) {
+      console.error("Upload error:", error);
+      setStatus("error");
+      setMessage(
+        error instanceof Error ? error.message : "Failed to upload worksheet"
+      );
+    }
+  };
+
+  const handleUpload = async () => {
+    if (mode === "grading") {
+      await handleUploadGradedWorksheet();
+    } else {
+      await handleUploadQuestions();
+    }
+  };
+
   const handleClose = () => {
     setFile(null);
     setStatus("idle");
     setProgress(0);
     setMessage("");
-    setQuestionCount(0);
+    setResult(null);
+    setIsDragging(false);
     onClose();
   };
 
   const isProcessing = status === "uploading" || status === "processing";
 
+  // Type guard for grading result
+  const isGradingResult = (res: UploadResult): res is GradingUploadResult => {
+    return res !== null && 'total_questions' in res;
+  };
+
+  const defaultTitle = mode === "grading"
+    ? `Upload Graded Worksheet${studentName ? ` for ${studentName}` : ""}`
+    : "Upload Question Paper";
+
+  const defaultDescription = mode === "grading"
+    ? "Upload a PDF or image of the graded worksheet to automatically analyze performance"
+    : "Upload a PDF or image file to extract questions automatically";
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={isProcessing ? () => {} : handleClose}
-      title="Upload Question Paper"
-      description="Upload a PDF or image file to extract questions automatically"
+      title={title || defaultTitle}
+      description={description || defaultDescription}
       size="md"
       showCloseButton={!isProcessing}
     >
       <div className="space-y-4">
-        {/* File Upload Area */}
+        {/* File Upload Area with Drag & Drop */}
         <div
           onClick={() => !isProcessing && fileInputRef.current?.click()}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
           className={cn(
-            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+            "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all",
             file
               ? "border-indigo-500 bg-indigo-50"
+              : isDragging
+              ? "border-indigo-500 bg-indigo-50 scale-105"
               : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50",
             isProcessing && "pointer-events-none opacity-50"
           )}
@@ -150,7 +291,7 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
             ref={fileInputRef}
             type="file"
             accept=".pdf,.jpg,.jpeg,.png"
-            onChange={handleFileChange}
+            onChange={handleInputChange}
             className="hidden"
             disabled={isProcessing}
           />
@@ -162,12 +303,25 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
               <p className="text-xs text-gray-500">
                 {(file.size / 1024 / 1024).toFixed(2)} MB
               </p>
+              {!isProcessing && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFile(null);
+                  }}
+                  className="mt-2"
+                >
+                  Remove
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
               <Upload className="h-12 w-12 text-gray-400" />
               <p className="text-sm font-medium text-gray-900">
-                Click to upload or drag and drop
+                {isDragging ? "Drop file here" : "Click to upload or drag and drop"}
               </p>
               <p className="text-xs text-gray-500">PDF, JPG, or PNG (max 10MB)</p>
             </div>
@@ -187,14 +341,43 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
           </div>
         )}
 
-        {/* Status Messages */}
-        {status === "success" && (
+        {/* Success Message with Results */}
+        {status === "success" && result && mode === "grading" && isGradingResult(result) && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-green-800">{message}</p>
+                <p className="text-xs text-green-700 mt-1">
+                  {result.correct_answers} / {result.total_questions} correct
+                </p>
+              </div>
+            </div>
+
+            {result.weaknesses && result.weaknesses.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-yellow-900 mb-1">
+                  Areas for Improvement:
+                </p>
+                <ul className="list-disc list-inside text-xs text-yellow-800">
+                  {result.weaknesses.slice(0, 3).map((weakness: string, idx: number) => (
+                    <li key={idx}>{weakness}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Success Message for Questions */}
+        {status === "success" && mode === "questions" && (
           <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
             <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
             <p className="text-sm text-green-800">{message}</p>
           </div>
         )}
 
+        {/* Error Message */}
         {status === "error" && (
           <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
             <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
@@ -224,7 +407,7 @@ export function UploadModal({ isOpen, onClose, onUploadComplete }: UploadModalPr
           ) : (
             <>
               <Upload className="h-4 w-4 mr-2" />
-              Upload & Process
+              {mode === "grading" ? "Upload & Grade" : "Upload & Process"}
             </>
           )}
         </Button>

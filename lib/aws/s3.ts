@@ -50,6 +50,33 @@ export async function uploadFileToS3(
 }
 
 /**
+ * Upload file to S3 with custom key
+ */
+export async function uploadToS3(
+  fileBuffer: Uint8Array | Buffer,
+  key: string,
+  contentType: string
+): Promise<string> {
+  try {
+    const input: PutObjectCommandInput = {
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: fileBuffer,
+      ContentType: contentType,
+    };
+
+    const command = new PutObjectCommand(input);
+    await s3Client.send(command);
+
+    // Return the S3 URL
+    return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${key}`;
+  } catch (error) {
+    console.error("Error uploading file to S3:", error);
+    throw error;
+  }
+}
+
+/**
  * Generate presigned URL for file upload
  */
 export async function generatePresignedUploadUrl(
