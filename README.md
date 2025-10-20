@@ -6,18 +6,10 @@ An AI-powered tutor assistant web application built with Next.js 15, helping tut
 
 ## Features
 
-### Phase 1 (Current) ✅
-- **Dashboard Layout**: Sidebar navigation, header, and AI agent chat interface
-- **Students Management**: View student profiles and performance metrics
-- **Question Bank**: Browse and organize teaching questions
-- **Schedule View**: Manage teaching sessions and appointments
-- **AI Assistant**: Chat interface for tutor support (powered by Amazon Bedrock Nova)
-
-### Upcoming Phases
-- **Phase 2**: Question bank with OCR processing and AI classification
-- **Phase 3**: Auto-grading and student performance tracking
-- **Phase 4**: AI-powered lesson plan generation
-- **Phase 5**: Full AI agent orchestration with action groups
+- Question bank with OCR processing and AI classification
+- Auto-grading and student performance tracking
+- AI-powered lesson plan generation
+- Full AI agent orchestration with action groups
 
 ## Tech Stack
 
@@ -165,72 +157,6 @@ lumix/
 └── public/                      # Static assets
 ```
 
-## Available Scripts
-
-- `npm run dev` - Start development server with Turbopack
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npx tsx scripts/create-dynamodb-tables.ts` - Create DynamoDB tables
-
-## Features Overview
-
-### Dashboard
-- Quick stats overview (students, questions, sessions)
-- Recent activity feed
-- Quick action cards
-
-### Students Page
-- Student cards with performance metrics
-- Topic-wise accuracy display
-- Progress indicators
-- Next session information
-
-### Questions Page
-- Question bank browser
-- Filter by topic and difficulty
-- Search functionality
-- Question metadata (usage stats, success rate)
-
-### Schedule Page
-- Calendar view of teaching sessions
-- Sessions grouped by date
-- Session details with topics
-- Summary cards (today, this week, teaching hours)
-
-### AI Assistant
-- Real-time chat interface
-- Powered by Amazon Bedrock Nova
-- Context-aware responses
-- Teaching guidance and support
-
-## AWS Services Setup
-
-### Amazon Bedrock
-Required for AI features. Ensure you have:
-1. Model access enabled for Amazon Nova Lite
-2. Appropriate IAM permissions for Bedrock API calls
-
-### DynamoDB
-Tables are automatically created via the setup script. Each table uses on-demand billing mode.
-
-### S3
-Used for storing:
-- Uploaded question papers
-- Generated worksheets
-- Graded work samples
-- Question images
-
-### Textract (Phase 2)
-Will be used for OCR processing of uploaded documents.
-
-## Development Notes
-
-- The app uses Next.js 15's App Router with React Server Components
-- Tailwind CSS v4 is configured for styling
-- AWS SDK v3 is used for all AWS integrations
-- Type-safe with TypeScript throughout
-
 ## Troubleshooting
 
 ### Node Version Error
@@ -239,36 +165,8 @@ If you see "Node.js version required" error, upgrade Node.js:
 # Using nvm
 nvm install 20
 nvm use 20
-
-# Or download from https://nodejs.org
 ```
-
-### AWS Credentials Error
-Ensure your AWS credentials are correct in `.env.local` and have the necessary permissions.
-
-### Bedrock Access Error
-Make sure you've requested and been granted access to the Amazon Nova models in the Bedrock console.
-
-### DynamoDB Table Creation Fails
-Check that your AWS credentials have `dynamodb:CreateTable` permissions.
-
-## Next Steps
-
-After completing Phase 1 setup, you can proceed with:
-
-1. **Phase 2**: Implement question upload and OCR processing
-2. **Phase 3**: Add auto-grading functionality
-3. **Phase 4**: Implement lesson plan generation
-4. **Phase 5**: Set up Bedrock Agent with action groups
 
 ## License
 
 This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions, please file an issue in the GitHub repository.
-
----
-
-Built with ✨ by Lumix
