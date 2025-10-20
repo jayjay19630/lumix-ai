@@ -221,6 +221,31 @@ export async function updateQuestion(
   }
 }
 
+export async function queryQuestions(
+  filters?: {
+    topics?: string[];
+    difficulties?: ("Easy" | "Medium" | "Hard")[];
+  }
+): Promise<Question[]> {
+  try {
+    // Use getAllQuestions and filter if needed
+    const allQuestions = await getAllQuestions();
+
+    if (!filters) {
+      return allQuestions;
+    }
+
+    return allQuestions.filter((q) => {
+      const topicMatch = !filters.topics || filters.topics.includes(q.topic);
+      const difficultyMatch = !filters.difficulties || filters.difficulties.includes(q.difficulty);
+      return topicMatch && difficultyMatch;
+    });
+  } catch (error) {
+    console.error("Error querying questions:", error);
+    throw error;
+  }
+}
+
 // ============ Lesson Plan Operations ============
 
 export async function getLessonPlan(lessonId: string): Promise<LessonPlan | null> {

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, BookOpen, Calendar, Sparkles } from "lucide-react";
+import { Home, Users, BookOpen, Calendar, FileText, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Students", href: "/students", icon: Users },
   { name: "Questions", href: "/questions", icon: BookOpen },
+  { name: "Worksheets", href: "/worksheets", icon: FileText },
   { name: "Schedule", href: "/schedule", icon: Calendar },
 ];
 

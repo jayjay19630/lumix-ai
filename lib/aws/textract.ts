@@ -2,9 +2,9 @@ import {
   TextractClient,
   DetectDocumentTextCommand,
   DetectDocumentTextCommandInput,
-  Block,
 } from "@aws-sdk/client-textract";
 import type { TextractResult, ExtractedQuestion } from "../types";
+import { invokeNovaModel } from "./bedrock";
 
 // Initialize Textract Client
 const textractClient = new TextractClient({
@@ -40,8 +40,8 @@ export async function extractTextFromDocument(
     // Combine all text
     const extractedText = textBlocks.map((block) => block.Text).join("\n");
 
-    // Parse questions from text
-    const questions = parseQuestionsFromText(extractedText, blocks);
+    // Parse questions from text using AI
+    const questions = await parseQuestionsWithAI(extractedText);
 
     return {
       extracted_text: extractedText,
@@ -54,32 +54,101 @@ export async function extractTextFromDocument(
 }
 
 /**
- * Parse individual questions from extracted text
- * This is a simple implementation - can be enhanced with more sophisticated logic
+ * Parse individual questions from extracted text using AI
+ * Handles unstructured text and complex question formats
  */
-function parseQuestionsFromText(
-  text: string,
-  blocks: Block[]
-): ExtractedQuestion[] {
+async function parseQuestionsWithAI(text: string): Promise<ExtractedQuestion[]> {
+  // If text is empty or too short, return empty array
+  if (!text || text.trim().length < 20) {
+    return [];
+  }
+
+  try {
+    const prompt = `You are an expert at parsing math questions from extracted text. The text below was extracted from a PDF or image and may be unstructured, contain OCR errors, or have questions in various formats.
+
+Your task is to:
+1. Identify individual questions in the text
+2. Clean up OCR errors if present
+3. Preserve the original question text as accurately as possible
+4. Handle both numbered (1., 2., etc.) and unnumbered questions
+5. Include multi-part questions as a single question
+
+Extracted Text:
+${text}
+
+Respond with a JSON array of questions in this exact format:
+[
+  {
+    "text": "The complete question text, cleaned and formatted",
+    "confidence": 0.95
+  }
+]
+
+Guidelines:
+- If questions are clearly numbered (1., 2., Q1:, etc.), split by those markers
+- If text is unstructured, use context clues to identify separate questions
+- Confidence should be 0.9-1.0 for clearly formatted questions, 0.7-0.9 for unstructured questions
+- Exclude headers, instructions, or non-question content
+- If no valid questions found, return an empty array []
+
+Only return valid JSON, no additional text.`;
+
+    const response = await invokeNovaModel({
+      prompt,
+      temperature: 0.3, // Low temperature for more consistent parsing
+      maxTokens: 4096,
+    });
+
+    // Parse the AI response
+    const parsed = JSON.parse(response.trim());
+
+    // Validate the response structure
+    if (Array.isArray(parsed)) {
+      return parsed.filter(
+        (q: unknown): q is ExtractedQuestion => {
+          const question = q as { text?: unknown; confidence?: unknown };
+          return (
+            question.text !== undefined &&
+            typeof question.text === "string" &&
+            question.text.length > 10 &&
+            question.confidence !== undefined &&
+            typeof question.confidence === "number"
+          );
+        }
+      );
+    }
+
+    console.warn("AI returned non-array response, falling back to regex");
+    return fallbackParseQuestions(text);
+  } catch (error) {
+    console.error("Error parsing questions with AI:", error);
+    // Fallback to simple regex parsing
+    return fallbackParseQuestions(text);
+  }
+}
+
+/**
+ * Fallback question parsing using regex patterns
+ * Used when AI parsing fails
+ */
+function fallbackParseQuestions(text: string): ExtractedQuestion[] {
   const questions: ExtractedQuestion[] = [];
 
-  // Split by common question patterns (e.g., "1.", "Q1:", etc.)
-  const questionPattern = /(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))\s*(.+?)(?=(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))|$)/gis;
-
-  const matches = text.matchAll(questionPattern);
+  // Split by common question patterns
+  const questionPattern = /(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))\s*(.+?)(?=(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))|$)/gi;
+  const matches = Array.from(text.matchAll(questionPattern));
 
   for (const match of matches) {
     const questionText = match[1]?.trim();
     if (questionText && questionText.length > 10) {
-      // Filter out very short matches
       questions.push({
         text: questionText,
-        confidence: 0.9, // Default confidence
+        confidence: 0.7,
       });
     }
   }
 
-  // If no questions found with pattern, try to split by double newlines
+  // If no questions found, split by double newlines
   if (questions.length === 0) {
     const paragraphs = text.split(/\n\n+/);
     paragraphs.forEach((paragraph) => {
@@ -87,7 +156,7 @@ function parseQuestionsFromText(
       if (trimmed.length > 20) {
         questions.push({
           text: trimmed,
-          confidence: 0.7,
+          confidence: 0.5,
         });
       }
     });
@@ -122,7 +191,7 @@ export async function extractTextFromS3Document(
     );
 
     const extractedText = textBlocks.map((block) => block.Text).join("\n");
-    const questions = parseQuestionsFromText(extractedText, blocks);
+    const questions = await parseQuestionsWithAI(extractedText);
 
     return {
       extracted_text: extractedText,

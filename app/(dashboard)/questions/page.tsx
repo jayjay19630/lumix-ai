@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Upload, Plus, Search } from "lucide-react";
+import { Upload, Search } from "lucide-react";
 import { cn, getDifficultyColor } from "@/lib/utils";
 import { UploadModal } from "@/components/questions/UploadModal";
 import { QuestionDetailModal } from "@/components/questions/QuestionDetailModal";
@@ -139,10 +139,7 @@ export default function QuestionsPage() {
             <Upload className="h-4 w-4 mr-2" />
             Upload Paper
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Question
-          </Button>
+
         </div>
       </div>
 
