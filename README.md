@@ -26,8 +26,7 @@ lumix/
 │   ├── requirements.txt
 │   └── deploy.sh       # Deployment scripts
 │
-├── QUICKSTART.md       # Quick start guide
-└── AI_SERVICE_MIGRATION.md  # Architecture details
+├── README.md       # Quick start guide
 ```
 
 ---
