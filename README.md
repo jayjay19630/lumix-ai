@@ -54,34 +54,6 @@ Copy the example environment file and configure it with your AWS credentials:
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` and add your AWS configuration:
-
-```env
-# AWS Configuration
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_access_key_here
-AWS_SECRET_ACCESS_KEY=your_secret_key_here
-
-# AWS Bedrock
-AWS_BEDROCK_MODEL_ID=amazon.nova-lite-v1:0
-AWS_BEDROCK_AGENT_ID=your_agent_id  # Optional for Phase 1
-AWS_BEDROCK_AGENT_ALIAS_ID=your_alias_id  # Optional for Phase 1
-
-# DynamoDB Tables
-DYNAMODB_STUDENTS_TABLE=lumix-students
-DYNAMODB_QUESTIONS_TABLE=lumix-questions
-DYNAMODB_LESSONS_TABLE=lumix-lesson-plans
-DYNAMODB_GRADE_HISTORY_TABLE=lumix-grade-history
-DYNAMODB_SESSION_SCHEDULES_TABLE=lumix-session-schedules
-DYNAMODB_WORKSHEETS_TABLE=lumix-worksheets
-
-# S3 Storage
-S3_BUCKET_NAME=lumix-files
-
-# Application
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
 ### 4. Create DynamoDB Tables
 
 Run the table creation script to set up your database:
@@ -106,15 +78,7 @@ aws s3 mb s3://lumix-files --region us-east-1
 
 Or create it via the AWS Console at https://console.aws.amazon.com/s3
 
-### 6. Enable Amazon Bedrock Access
-
-1. Go to the [Amazon Bedrock Console](https://console.aws.amazon.com/bedrock)
-2. Navigate to "Model access" in the left sidebar
-3. Click "Manage model access"
-4. Enable access to **Amazon Nova Lite** model
-5. Wait for access to be granted (usually takes a few minutes)
-
-### 7. Run the Development Server
+### 6. Run the Development Server
 
 ```bash
 npm run dev
@@ -168,7 +132,3 @@ If you see "Node.js version required" error, upgrade Node.js:
 nvm install 20
 nvm use 20
 ```
-
-## License
-
-This project is licensed under the MIT License.

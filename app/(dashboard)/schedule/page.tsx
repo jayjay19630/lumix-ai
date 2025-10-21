@@ -152,6 +152,13 @@ export default function SchedulePage() {
   };
 
   const handleSessionClick = async (session: Session) => {
+    // Check if student data is loaded
+    const student = getStudent(session.student_id);
+    if (!student) {
+      toast.error("Student data not loaded yet. Please try again.");
+      return;
+    }
+
     setSelectedSession(session);
 
     // If session has a lesson plan, fetch it
@@ -337,7 +344,7 @@ export default function SchedulePage() {
       )}
 
       {/* Lesson Plan Modal */}
-      {showLessonPlanModal && selectedSession && (
+      {showLessonPlanModal && selectedSession && getStudent(selectedSession.student_id) && (
         <LessonPlanModal
           session={selectedSession}
           student={getStudent(selectedSession.student_id)!}
