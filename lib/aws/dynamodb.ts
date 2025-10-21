@@ -10,7 +10,7 @@ import {
   ScanCommandInput,
   QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import type { Student, Question, LessonPlan, GradeHistory, RecurringSessionSchedule } from "../types";
+import type { Student, Question, LessonPlan, GradeHistory, RecurringSessionSchedule, Worksheet } from "../types";
 
 // Initialize DynamoDB Client
 const dynamoClient = new DynamoDBClient({
@@ -36,6 +36,7 @@ const TABLES = {
   LESSONS: process.env.DYNAMODB_LESSONS_TABLE || "lumix-lesson-plans",
   GRADE_HISTORY: process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
   SESSION_SCHEDULES: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
+  WORKSHEETS: process.env.DYNAMODB_WORKSHEETS_TABLE || "lumix-worksheets",
 };
 
 // ============ Student Operations ============
@@ -445,6 +446,80 @@ export async function deleteSessionSchedule(scheduleId: string): Promise<void> {
     await docClient.send(command);
   } catch (error) {
     console.error("Error deleting session schedule:", error);
+    throw error;
+  }
+}
+
+// ============ Worksheet Operations ============
+
+export async function getWorksheet(worksheetId: string): Promise<Worksheet | null> {
+  try {
+    const command = new GetCommand({
+      TableName: TABLES.WORKSHEETS,
+      Key: { worksheet_id: worksheetId },
+    });
+    const response = await docClient.send(command);
+    return (response.Item as Worksheet) || null;
+  } catch (error) {
+    console.error("Error getting worksheet:", error);
+    throw error;
+  }
+}
+
+export async function getAllWorksheets(): Promise<Worksheet[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: TABLES.WORKSHEETS,
+    });
+    const response = await docClient.send(command);
+    return (response.Items as Worksheet[]) || [];
+  } catch (error) {
+    console.error("Error getting all worksheets:", error);
+    throw error;
+  }
+}
+
+export async function getWorksheetsByStudent(studentId: string): Promise<Worksheet[]> {
+  try {
+    const command = new QueryCommand({
+      TableName: TABLES.WORKSHEETS,
+      IndexName: "StudentIndex",
+      KeyConditionExpression: "student_id = :student_id",
+      ExpressionAttributeValues: {
+        ":student_id": studentId,
+      },
+    });
+    const response = await docClient.send(command);
+    return (response.Items as Worksheet[]) || [];
+  } catch (error) {
+    console.error("Error getting worksheets by student:", error);
+    throw error;
+  }
+}
+
+export async function createWorksheet(worksheet: Worksheet): Promise<Worksheet> {
+  try {
+    const command = new PutCommand({
+      TableName: TABLES.WORKSHEETS,
+      Item: worksheet,
+    });
+    await docClient.send(command);
+    return worksheet;
+  } catch (error) {
+    console.error("Error creating worksheet:", error);
+    throw error;
+  }
+}
+
+export async function deleteWorksheet(worksheetId: string): Promise<void> {
+  try {
+    const command = new DeleteCommand({
+      TableName: TABLES.WORKSHEETS,
+      Key: { worksheet_id: worksheetId },
+    });
+    await docClient.send(command);
+  } catch (error) {
+    console.error("Error deleting worksheet:", error);
     throw error;
   }
 }

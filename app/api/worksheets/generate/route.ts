@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryQuestions } from "@/lib/aws/dynamodb";
+import { queryQuestions, createWorksheet } from "@/lib/aws/dynamodb";
 import { invokeNovaModel } from "@/lib/aws/bedrock";
+import { uploadToS3 } from "@/lib/aws/s3";
+import { v4 as uuidv4 } from "uuid";
+import type { Worksheet } from "@/lib/types";
 
 interface WorksheetCriteria {
   title: string;
+  studentId?: string;
   studentName?: string;
   topics: string[];
   difficulty: ("Easy" | "Medium" | "Hard")[];
@@ -14,6 +18,8 @@ interface WorksheetCriteria {
     practice?: number;
     challenge?: number;
   };
+  saveToDB?: boolean; // Flag to save worksheet to database
+  pdfBlob?: Blob; // PDF blob to upload to S3
 }
 
 interface Question {
@@ -78,9 +84,47 @@ export async function POST(request: NextRequest) {
       difficulty: q.difficulty,
     }));
 
+    // If saveToDB flag is set and we have a PDF, save to database and S3
+    let worksheet: Worksheet | null = null;
+    if (criteria.saveToDB && criteria.pdfBlob) {
+      const worksheetId = uuidv4();
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `${criteria.title.toLowerCase().replace(/\s+/g, "-")}-${timestamp}.pdf`;
+      const uploadKey = `worksheets/${worksheetId}/${filename}`;
+
+      // Upload PDF to S3
+      const pdfBuffer = new Uint8Array(await criteria.pdfBlob.arrayBuffer());
+      const pdfUrl = await uploadToS3(pdfBuffer, uploadKey, "application/pdf");
+
+      // Create worksheet record
+      worksheet = {
+        worksheet_id: worksheetId,
+        title: criteria.title,
+        student_id: criteria.studentId,
+        student_name: criteria.studentName,
+        topics: criteria.topics,
+        difficulty: criteria.difficulty,
+        question_count: formattedQuestions.length,
+        questions: selectedQuestions.map((q) => q.question_id),
+        pdf_url: pdfUrl,
+        has_answer_key: criteria.includeAnswerKey,
+        sections: criteria.sections
+          ? {
+              warmup: criteria.sections.warmup || 0,
+              practice: criteria.sections.practice || 0,
+              challenge: criteria.sections.challenge || 0,
+            }
+          : undefined,
+        created_at: new Date().toISOString(),
+      };
+
+      await createWorksheet(worksheet);
+    }
+
     return NextResponse.json({
       questions: formattedQuestions,
       total: formattedQuestions.length,
+      worksheet: worksheet, // Return worksheet if saved
     });
   } catch (error) {
     console.error("Error generating worksheet:", error);

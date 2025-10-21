@@ -148,6 +148,27 @@ export interface QuestionResult {
   feedback?: string;
 }
 
+// Worksheet Types
+export interface Worksheet {
+  worksheet_id: string;
+  title: string;
+  student_id?: string;
+  student_name?: string;
+  topics: string[];
+  difficulty: ("Easy" | "Medium" | "Hard")[];
+  question_count: number;
+  questions: string[]; // question_ids
+  pdf_url: string; // S3 URL
+  has_answer_key: boolean;
+  sections?: {
+    warmup: number;
+    practice: number;
+    challenge: number;
+  };
+  created_at: string;
+  created_by?: string; // tutor_id (for future use)
+}
+
 // File Upload Types
 export interface UploadedFile {
   file_id: string;

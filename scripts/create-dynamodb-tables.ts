@@ -156,6 +156,24 @@ async function createAllTables(): Promise<void> {
     ],
   });
 
+  // Worksheets Table
+  await createTable({
+    TableName: process.env.DYNAMODB_WORKSHEETS_TABLE || "lumix-worksheets",
+    KeySchema: [{ AttributeName: "worksheet_id", KeyType: "HASH" }],
+    AttributeDefinitions: [
+      { AttributeName: "worksheet_id", AttributeType: "S" },
+      { AttributeName: "student_id", AttributeType: "S" },
+    ],
+    BillingMode: "PAY_PER_REQUEST",
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "StudentIndex",
+        KeySchema: [{ AttributeName: "student_id", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+    ],
+  });
+
   console.log("\n✓ All tables created successfully!");
 }
 
