@@ -206,18 +206,124 @@ PHASE 4 - Schedule & Lesson Plans (Tool 3):
 4. Display generated lesson plan with full structure
 5. Download worksheet PDF
 
-PHASE 5 - AI Agent Chat:
+PHASE 5 - AI Agent Chat with Web Search:
 
-1. Chat interface in right sidebar
-2. API endpoint for agent conversations
-3. Use Bedrock Agent with action groups:
-   - query_students
-   - query_questions
-   - generate_lesson_plan
-   - grade_worksheet
-   - get_schedule
-4. Agent can navigate user to appropriate page
-5. Agent provides insights and suggestions
+1. UI LAYOUT:
+   - Dashboard: Full ChatGPT-like interface (center screen)
+   - Other pages: Fixed right sidebar (350px, collapsible)
+   - Show agent "thinking" with action traces
+   - Display web search queries and sources when used
+
+2. BEDROCK AGENT ACTION GROUPS:
+   
+   Core Actions:
+   - query_students - Get student profiles/performance
+   - query_grade_history - Get graded sessions, analyze patterns
+   - query_questions - Search question bank
+   - generate_worksheet - Create worksheets with questions
+   - generate_lesson_plan - Create lesson plans (with student data)
+   - get_schedule - Get upcoming sessions
+   - create_session - Add one-off sessions
+   - web_search - Search web for teaching resources, syllabus info, strategies
+
+4. API ENDPOINTS:
+   
+   POST /api/agent/chat
+   - Accept: message, conversation_id, page_context
+   - Bedrock Agent orchestrates actions + web search
+   - Return: response, action_trace, sources, conversation_id
+   
+5. AGENT SYSTEM PROMPT:
+   
+   "You are Lumix Assistant with web search. Help tutors by:
+   - Analyzing student performance
+   - Creating lesson plans and worksheets
+   - Researching curriculum and teaching strategies
+   
+   Use web search for:
+   - Syllabus information (IGCSE, IB, etc.)
+   - Teaching resources and tools
+   - Current exam formats
+   - Educational best practices
+   
+   Always cite sources. Be proactive. Use ✨ occasionally."
+
+6. KEY WORKFLOWS
+
+   Workflow 1: Performance Analysis
+   User: "How is Alice doing?"
+   Agent:
+   - Calls query_students(student_name="Alice")
+   - Calls query_grade_history(student_id="alice_001", limit=5)
+   - Responds: "Alice is performing at 68% overall. Her weak area is 
+     Quadratic Equations (55% accuracy). In the last 5 sessions, she's 
+     improved from 62% to 75%. I recommend focusing next lesson on 
+     double-root problems. Would you like me to generate a lesson plan?"
+
+   Workflow 2: Schedule Overview
+   User: "What sessions do I have this week?"
+   Agent:
+   - Calls get_schedule(start_date="2024-10-21", end_date="2024-10-27")
+   - Responds: "You have 8 sessions this week:
+     
+     Needs Attention:
+     • Mon 3pm - Alice (no lesson plan yet) ⚠️
+     • Thu 4pm - Bob (no lesson plan yet) ⚠️
+     
+     Ready:
+     • Mon 5pm - Alice ✓
+     • Wed 2pm - Charlie ✓
+     • Fri 3pm - Alice ✓
+     
+     Would you like me to generate the missing lesson plans?"
+   
+   Workflow 3: Proactive Lesson Planning
+   User: "Create lesson plan for Alice's Monday session on quadratic equations based on her weaknesses"
+   Agent:
+   - Calls get_schedule(student_id="alice_001", date="next Monday")
+   - Calls query_grade_history(student_id="alice_001")
+   - Calls generate_worksheet(topic="Quadratic Equations", difficulty="medium", count=8)
+   - Calls generate_lesson_plan(session_id="sess_xxx", topic="Quadratic Equations", worksheet_id="ws_xxx", use_student_data=true)
+   - Responds: "✓ Created lesson plan for Alice's Monday session (Oct 28, 3pm).
+     Focus: Quadratic Equations with emphasis on double roots.
+     Attached 8-question worksheet (medium difficulty).
+     [View Lesson Plan] [View Worksheet]"
+
+   Example 4: Combined Workflow
+   User: "Prepare Alice's session on functions based on IGCSE syllabus"
+   Agent:
+   - web_search("IGCSE functions syllabus requirements")
+   - query_grade_history(Alice)
+   - query_questions(functions, IGCSE-aligned)
+   - generate_worksheet + generate_lesson_plan
+   - Returns complete session prep with syllabus alignment
+
+7. UI COMPONENTS:
+   - AgentChat.tsx - Main chat interface
+   - AgentSidebar.tsx - Compact sidebar
+   - MessageBubble.tsx - With source citations
+   - ActionTrace.tsx - Show web searches + actions
+   - SourceCard.tsx - Display web sources
+   - ThinkingIndicator.tsx - "Searching web..."
+
+8. IMPLEMENTATION:
+   1. Configure Bedrock Agent with web search enabled
+   2. Create action group Lambda functions
+   3. Build /api/agent/chat endpoint
+   4. Implement chat UI (dashboard + sidebar)
+   5. Add web search action (if custom)
+   6. Test workflows with web search
+   7. Add source citation display
+   8. Polish with action traces
+
+TECHNICAL NOTES:
+- Use @aws-sdk/client-bedrock-agent-runtime
+- Enable streaming responses
+- Cache web search results (5min TTL)
+- Log all actions for debugging
+- Rate limit agent calls
+- Show "Searching web..." in UI
+- Display sources as clickable links
 
 BRANDING:
 
@@ -239,65 +345,7 @@ UI DESIGN PRINCIPLES:
 - Error handling with toast notifications
 - Accessibility: proper ARIA labels, keyboard navigation
 
-IMPORTANT AWS INTEGRATION NOTES:
-
-1. Use AWS SDK v3 (modular imports)
-2. For Bedrock Agent, use @aws-sdk/client-bedrock-agent-runtime
-3. For Bedrock LLM calls, use @aws-sdk/client-bedrock-runtime with Nova model
-4. Textract: Use @aws-sdk/client-textract with DetectDocumentText
-5. DynamoDB: Use @aws-sdk/client-dynamodb with DynamoDB Document Client
-6. S3: Use @aws-sdk/client-s3 with presigned URLs for uploads
-7. All AWS clients should be instantiated with proper credentials from env vars
-8. Implement retry logic and error handling for AWS calls
-
-DEMO DATA:
-Pre-populate with sample data for demo:
-
-- 3 students (Alice, Bob, Charlie) with realistic performance data
-- 50 questions across 5 topics (Quadratic Equations, Trigonometry, Linear Equations, Geometry, Functions)
-- 2-3 past sessions per student
-- 1-2 upcoming sessions in schedule
-
-ENVIRONMENT VARIABLES NEEDED:
-
-```
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_BEDROCK_MODEL_ID=amazon.nova-lite-v1:0
-AWS_BEDROCK_AGENT_ID=your_agent_id
-AWS_BEDROCK_AGENT_ALIAS_ID=your_alias_id
-DYNAMODB_STUDENTS_TABLE=lumix-students
-DYNAMODB_QUESTIONS_TABLE=lumix-questions
-DYNAMODB_LESSONS_TABLE=lumix-lesson-plans
-DYNAMODB_GRADE_HISTORY_TABLE=lumix-grade-history
-DYNAMODB_SESSION_SCHEDULES_TABLE=lumix-session-schedules
-S3_BUCKET_NAME=lumix-files
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-```
-
----
-
 ## 📋 **Additional Prompts for Specific Features**
-
-### **For AWS Bedrock Agent Setup:**
-```
-
-Create an AWS Bedrock Agent configuration for Lumix with these action groups:
-
-1. query_students - Get student information and performance
-2. query_questions - Search question bank
-3. generate_lesson_plan - Create personalized lesson plans
-4. grade_worksheet - Analyze and grade student work
-5. get_insights - Provide teaching insights
-
-Use Amazon Bedrock Nova Lite model (amazon.nova-lite-v1:0) for reasoning.
-Include proper IAM policies and Lambda function code if needed.
-Provide both AWS Console setup instructions AND AWS SDK code.
-
-```
 
 ### **For PDF Generation:**
 ```

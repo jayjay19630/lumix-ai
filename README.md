@@ -1,100 +1,145 @@
 # Lumix ✨
 
-> Teaching brilliance, powered by AI
+**AI-Powered Tutor Assistant** - Teaching brilliance, powered by AI
 
-An AI-powered tutor assistant web application built with Next.js 15, helping tutors manage questions, grade student work, and generate personalized lesson plans using AWS AI services.
+Lumix helps tutors manage students, grade worksheets, generate personalized lesson plans, and organize their teaching workflow using AWS AI services.
 
-## Features
+---
 
-- Question bank with OCR processing and AI classification
-- Auto-grading and student performance tracking
-- AI-powered lesson plan generation
-- Full AI agent orchestration with action groups
+## 🏗️ Project Structure
 
-## Tech Stack
+This is a monorepo containing two services:
 
-- **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes
-- **AWS Services**:
-  - Amazon Bedrock (Nova model for LLM reasoning)
-  - Amazon Bedrock AgentCore (for orchestration)
-  - AWS Textract (OCR for document processing)
-  - Amazon DynamoDB (database)
-  - Amazon S3 (file storage)
-  - AWS SDK for JavaScript v3
-- **UI Components**: Custom components built with Tailwind CSS and lucide-react icons
-
-## Prerequisites
-
-- **Node.js**: Version 18.18.0 or higher (20.0.0+ recommended)
-- **npm**: Version 8 or higher
-- **AWS Account**: With access to Bedrock, DynamoDB, S3, and Textract
-- **AWS Credentials**: Access key ID and secret access key
-
-## Getting Started
-
-### 1. Clone the Repository
-
-```bash
-git clone git@github.com:jayjay19630/lumix-ai.git
-cd lumix
+```
+lumix/
+├── lumix-web/          # Next.js frontend (TypeScript)
+│   ├── app/            # Next.js App Router pages
+│   ├── components/     # React components
+│   ├── lib/            # Utilities, DB clients, AI service client
+│   └── package.json
+│
+├── lumix-ai/           # AI Service (Python FastAPI)
+│   ├── src/            # FastAPI application
+│   │   ├── main.py             # Main app + Lambda handler
+│   │   ├── services/           # Bedrock & Textract services
+│   │   └── aws_clients.py      # AWS SDK clients
+│   ├── requirements.txt
+│   └── deploy.sh       # Deployment scripts
+│
+├── QUICKSTART.md       # Quick start guide
+└── AI_SERVICE_MIGRATION.md  # Architecture details
 ```
 
-### 2. Install Dependencies
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Python 3.11+
+- AWS Account with Bedrock access
+- AWS credentials configured
+
+### 1. Start AI Service
 
 ```bash
+cd lumix-ai
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your AWS credentials
+
+# Start server
+python -m src.main
+```
+
+**AI service runs on http://localhost:8000**
+
+### 2. Start Web App
+
+```bash
+cd lumix-web
+
+# Install dependencies
 npm install
-```
 
-### 3. Configure Environment Variables
-
-Copy the example environment file and configure it with your AWS credentials:
-
-```bash
+# Configure environment
 cp .env.local.example .env.local
-```
+# Edit .env.local with your AWS credentials
 
-### 4. Create DynamoDB Tables
+# Add AI service URL
+echo "AI_SERVICE_URL=http://localhost:8000" >> .env.local
 
-Run the table creation script to set up your database:
-
-```bash
-npx tsx scripts/create-dynamodb-tables.ts
-```
-
-This will create the following tables:
-
-- `lumix-students`: Student profiles and performance data
-- `lumix-questions`: Question bank with metadata
-- `lumix-lesson-plans`: Generated lesson plans
-- `lumix-sessions`: Teaching session records
-
-### 5. Create S3 Bucket
-
-Create an S3 bucket for file storage:
-
-```bash
-aws s3 mb s3://lumix-files --region us-east-1
-```
-
-Or create it via the AWS Console at https://console.aws.amazon.com/s3
-
-### 6. Run the Development Server
-
-```bash
+# Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+**Web app runs on http://localhost:3000**
 
-## Troubleshooting
+---
 
-### Node Version Error
+## 📚 Tech Stack
 
-If you see "Node.js version required" error, upgrade Node.js:
+### Frontend (lumix-web)
 
-```bash
-# Using nvm
-nvm install 20
-nvm use 20
-```
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State**: React 19
+- **Database**: AWS DynamoDB
+- **Storage**: AWS S3
+
+### Backend (lumix-ai)
+
+- **Framework**: FastAPI
+- **Language**: Python 3.11
+- **AI/ML**: AWS Bedrock (Amazon Nova)
+- **OCR**: AWS Textract
+- **Deployment**: AWS Lambda (via Mangum)
+- **Container**: Docker
+
+---
+
+## ✨ Features
+
+### ✅ Implemented
+
+- **Question Bank**
+  - Upload past papers (PDF/images)
+  - Automatic OCR extraction (Textract)
+  - AI classification by topic and difficulty (Bedrock)
+  - Auto-generated explanations and teaching tips
+
+- **Student Management**
+  - Track student profiles and performance
+  - Performance analytics by topic
+  - Grade history tracking
+
+- **Worksheet Generation**
+  - AI-powered question selection
+  - Customizable by topic, difficulty, and count
+  - PDF export
+
+- **Lesson Planning**
+  - AI-generated lesson plans
+  - Structured teaching notes
+  - Duration-based planning
+
+- **Grading**
+  - Automatic worksheet grading (Textract + Bedrock)
+  - Student answer extraction
+  - Performance tracking and insights
+
+### 🚧 Coming Soon
+
+- Agent chat interface (Bedrock AgentCore + Strands)
+- Web search integration for curriculum research
+- Multi-turn agent conversations
