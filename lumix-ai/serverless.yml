@@ -16,24 +16,24 @@ provider:
     - Effect: Allow
       Action:
         - bedrock:InvokeModel
-      Resource: '*'
+      Resource: "*"
     - Effect: Allow
       Action:
         - textract:DetectDocumentText
         - textract:AnalyzeDocument
-      Resource: '*'
+      Resource: "*"
     - Effect: Allow
       Action:
         - s3:GetObject
         - s3:PutObject
-      Resource: 'arn:aws:s3:::${env:S3_BUCKET_NAME}/*'
+      Resource: "arn:aws:s3:::${env:S3_BUCKET_NAME}/*"
 
 functions:
   # Main API (can handle all endpoints via FastAPI)
   api:
     handler: src.main.handler
     events:
-      - httpApi: '*'
+      - httpApi: "*"
     description: Lumix AI Service - All AI endpoints
 
   # Individual Lambda functions for specific tasks
@@ -64,7 +64,7 @@ functions:
   agentChat:
     handler: src.main.handler
     description: Agent chat orchestration (for AgentCore)
-    timeout: 600  # Longer timeout for agent
+    timeout: 600 # Longer timeout for agent
 
 plugins:
   - serverless-python-requirements
