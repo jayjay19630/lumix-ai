@@ -10,11 +10,11 @@ dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 dynamodb_client = boto3.client('dynamodb', region_name=AWS_REGION)
 
 # Table references
-students_table = dynamodb.Table('students')
-questions_table = dynamodb.Table('questions')
-lesson_plans_table = dynamodb.Table('lesson_plans')
-grade_history_table = dynamodb.Table('grade_history')
-session_schedules_table = dynamodb.Table('session_schedules')
+students_table = dynamodb.Table('lumix-students')
+questions_table = dynamodb.Table('lumix-questions')
+lesson_plans_table = dynamodb.Table('lumix-lesson-plans')
+grade_history_table = dynamodb.Table('lumix-grade-history')
+session_schedules_table = dynamodb.Table('lumix-session-schedules')
 
 
 async def get_student_by_name(name: str) -> Optional[Dict[str, Any]]:
@@ -57,7 +57,7 @@ async def get_grade_history(student_id: str, limit: int = 10) -> List[Dict[str, 
     """Get student's grade history"""
     try:
         response = grade_history_table.query(
-            IndexName='student_id-index',
+            IndexName='StudentIndex',
             KeyConditionExpression='student_id = :student_id',
             ExpressionAttributeValues={':student_id': student_id},
             ScanIndexForward=False,  # Most recent first
@@ -109,7 +109,7 @@ async def get_schedule(
     try:
         if student_id:
             response = session_schedules_table.query(
-                IndexName='student_id-index',
+                IndexName='StudentIndex',
                 KeyConditionExpression='student_id = :student_id',
                 ExpressionAttributeValues={':student_id': student_id}
             )

@@ -3,8 +3,7 @@ Textract OCR Service
 """
 import json
 from typing import Dict, Any, List
-from ..aws_clients import textract_client, s3_client
-from ..import config
+from ..aws_clients import textract_client
 from .bedrock_service import invoke_nova_model
 
 

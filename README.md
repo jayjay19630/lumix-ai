@@ -107,8 +107,6 @@ npm run dev
 
 ## ✨ Features
 
-### ✅ Implemented
-
 - **Question Bank**
   - Upload past papers (PDF/images)
   - Automatic OCR extraction (Textract)
@@ -135,8 +133,7 @@ npm run dev
   - Student answer extraction
   - Performance tracking and insights
 
-### 🚧 Coming Soon
-
-- Agent chat interface (Bedrock AgentCore + Strands)
-- Web search integration for curriculum research
-- Multi-turn agent conversations
+- **Agentic Workflows**
+  - Agent chat interface (Bedrock AgentCore + Strands)
+  - Tools with above functionalities
+  - Web search integration
