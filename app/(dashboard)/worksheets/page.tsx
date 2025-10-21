@@ -11,6 +11,7 @@ import {
   type WorksheetQuestion,
 } from "@/lib/pdf/worksheet-generator";
 import type { Worksheet } from "@/lib/types";
+import toast from "react-hot-toast";
 
 const DIFFICULTIES = ["Easy", "Medium", "Hard"] as const;
 
@@ -110,12 +111,12 @@ export default function WorksheetsPage() {
 
   const handleGenerateWorksheet = async () => {
     if (criteria.topics.length === 0) {
-      alert("Please select at least one topic");
+      toast.error("Please select at least one topic");
       return;
     }
 
     if (criteria.difficulty.length === 0) {
-      alert("Please select at least one difficulty level");
+      toast.error("Please select at least one difficulty level");
       return;
     }
 
@@ -146,7 +147,7 @@ export default function WorksheetsPage() {
       setGeneratedQuestions(questions);
     } catch (error) {
       console.error("Error generating worksheet:", error);
-      alert("Failed to generate worksheet. Please try again.");
+      toast.error("Failed to generate worksheet. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -162,28 +163,38 @@ export default function WorksheetsPage() {
       const base64Response = await fetch(pdfPreview);
       const blob = await base64Response.blob();
 
-      // Send to API with saveToDB flag
-      const response = await fetch("/api/worksheets/generate", {
+      // Create FormData to send PDF blob
+      const formData = new FormData();
+      formData.append("pdf", blob, `${criteria.title.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+      formData.append("title", criteria.title);
+      formData.append("studentName", criteria.studentName || "");
+      formData.append("topics", JSON.stringify(criteria.topics));
+      formData.append("difficulty", JSON.stringify(criteria.difficulty));
+      formData.append("questionCount", generatedQuestions.length.toString());
+      formData.append("questions", JSON.stringify(generatedQuestions.map(q => q.id)));
+      formData.append("includeAnswerKey", criteria.includeAnswerKey.toString());
+      if (useSections && criteria.sections) {
+        formData.append("sections", JSON.stringify(criteria.sections));
+      }
+
+      // Call dedicated save endpoint
+      const response = await fetch("/api/worksheets/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...criteria,
-          saveToDB: true,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
         throw new Error("Failed to save worksheet");
       }
 
-      alert("Worksheet saved successfully!");
+      toast.success("Worksheet saved successfully!");
 
       // Switch to generated tab and refresh
       setActiveTab("generated");
       fetchWorksheets();
     } catch (error) {
       console.error("Error saving worksheet:", error);
-      alert("Failed to save worksheet. Please try again.");
+      toast.error("Failed to save worksheet. Please try again.");
     }
   };
 
@@ -218,10 +229,11 @@ export default function WorksheetsPage() {
       }
 
       // Refresh worksheets list
+      toast.success("Worksheet deleted successfully");
       fetchWorksheets();
     } catch (error) {
       console.error("Error deleting worksheet:", error);
-      alert("Failed to delete worksheet. Please try again.");
+      toast.error("Failed to delete worksheet. Please try again.");
     }
   };
 

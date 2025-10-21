@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { UserPlus, TrendingUp, TrendingDown, Loader2, Users as UsersIcon } from "lucide-react";
 import type { Student } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import toast from "react-hot-toast";
 
 function calculateAverageAccuracy(accuracy: Record<string, number>): number {
   const values = Object.values(accuracy);
@@ -228,13 +229,14 @@ function AddStudentModal({
       });
 
       if (response.ok) {
+        toast.success("Student created successfully!");
         onSuccess();
       } else {
-        alert("Failed to create student");
+        toast.error("Failed to create student");
       }
     } catch (error) {
       console.error("Error creating student:", error);
-      alert("Failed to create student");
+      toast.error("Failed to create student");
     } finally {
       setIsSubmitting(false);
     }
