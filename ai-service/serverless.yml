@@ -1,0 +1,75 @@
+service: lumix-ai-service
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ${env:AWS_REGION, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 1024
+  timeout: 300
+
+  environment:
+    AWS_BEDROCK_MODEL_ID: ${env:AWS_BEDROCK_MODEL_ID}
+    S3_BUCKET_NAME: ${env:S3_BUCKET_NAME}
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - bedrock:InvokeModel
+      Resource: '*'
+    - Effect: Allow
+      Action:
+        - textract:DetectDocumentText
+        - textract:AnalyzeDocument
+      Resource: '*'
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+      Resource: 'arn:aws:s3:::${env:S3_BUCKET_NAME}/*'
+
+functions:
+  # Main API (can handle all endpoints via FastAPI)
+  api:
+    handler: src.main.handler
+    events:
+      - httpApi: '*'
+    description: Lumix AI Service - All AI endpoints
+
+  # Individual Lambda functions for specific tasks
+  classifyQuestion:
+    handler: src.main.handler
+    description: Classify question topic and difficulty
+
+  generateExplanation:
+    handler: src.main.handler
+    description: Generate question explanation and teaching tips
+
+  selectQuestions:
+    handler: src.main.handler
+    description: Select questions for worksheet using AI
+
+  extractDocument:
+    handler: src.main.handler
+    description: Extract text from document using Textract
+
+  generateLessonPlan:
+    handler: src.main.handler
+    description: Generate AI-powered lesson plan
+
+  gradeWorksheet:
+    handler: src.main.handler
+    description: Grade worksheet using AI
+
+  agentChat:
+    handler: src.main.handler
+    description: Agent chat orchestration (for AgentCore)
+    timeout: 600  # Longer timeout for agent
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    layer: true

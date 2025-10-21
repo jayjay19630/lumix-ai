@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { queryQuestions } from "@/lib/aws/dynamodb";
-import { invokeNovaModel } from "@/lib/aws/bedrock";
+import { selectQuestionsWithAI as aiSelectQuestions } from "@/lib/ai-service-client";
 
 interface WorksheetCriteria {
   title: string;
@@ -65,11 +65,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use AI to intelligently select questions
-    const selectedQuestions = await selectQuestionsWithAI(
-      filteredQuestions,
-      criteria,
-    );
+    // Use AI Service to intelligently select questions
+    const selectedIndices = await aiSelectQuestions(filteredQuestions, criteria);
+
+    // Map indices to actual questions
+    const selectedQuestions = selectedIndices
+      .map((idx) => filteredQuestions[idx])
+      .filter((q) => q !== undefined);
 
     // Format questions for PDF generation
     const formattedQuestions = selectedQuestions.map((q) => ({
@@ -89,90 +91,6 @@ export async function POST(request: NextRequest) {
       { error: "Failed to generate worksheet" },
       { status: 500 },
     );
-  }
-}
-
-/**
- * Use AI to intelligently select and order questions
- */
-async function selectQuestionsWithAI(
-  questions: Question[],
-  criteria: WorksheetCriteria,
-): Promise<Question[]> {
-  try {
-    // If we have fewer questions than requested, return all
-    if (questions.length <= criteria.questionCount) {
-      return questions;
-    }
-
-    // Build a prompt for AI to select the best questions
-    const questionsJson = questions.map((q, idx) => ({
-      index: idx,
-      topic: q.topic,
-      difficulty: q.difficulty,
-      preview: q.text.substring(0, 100),
-    }));
-
-    const prompt = `You are an expert math tutor creating a worksheet. Select the best ${criteria.questionCount} questions from the following list to create a well-balanced, pedagogically sound worksheet.
-
-Criteria:
-- Topics: ${criteria.topics.join(", ")}
-- Difficulty levels: ${criteria.difficulty.join(", ")}
-- Total questions needed: ${criteria.questionCount}
-${
-  criteria.sections
-    ? `- Sections: Warm-up (${criteria.sections.warmup || 0}), Practice (${
-        criteria.sections.practice || 0
-      }), Challenge (${criteria.sections.challenge || 0})`
-    : ""
-}
-
-Available Questions:
-${JSON.stringify(questionsJson, null, 2)}
-
-Select questions that:
-1. Provide good topic variety
-2. Have appropriate difficulty progression
-3. Avoid redundancy
-4. Create a balanced learning experience
-${
-  criteria.sections
-    ? `5. Match the section requirements (easier questions for warm-up, harder for challenge)`
-    : ""
-}
-
-Respond with a JSON array of the selected question indices in the order they should appear in the worksheet:
-{
-  "selectedIndices": [0, 5, 12, ...]
-}
-
-Only return valid JSON, no additional text.`;
-
-    const response = await invokeNovaModel({
-      prompt,
-      temperature: 0.5,
-      maxTokens: 2048,
-    });
-
-    const parsed = JSON.parse(response.trim());
-
-    if (parsed.selectedIndices && Array.isArray(parsed.selectedIndices)) {
-      const selected = parsed.selectedIndices
-        .slice(0, criteria.questionCount)
-        .map((idx: number) => questions[idx])
-        .filter((q: Question | undefined) => q !== undefined);
-
-      if (selected.length > 0) {
-        return selected;
-      }
-    }
-
-    // Fallback to simple random selection if AI fails
-    return selectQuestionsRandomly(questions, criteria.questionCount);
-  } catch (error) {
-    console.error("Error selecting questions with AI:", error);
-    // Fallback to random selection
-    return selectQuestionsRandomly(questions, criteria.questionCount);
   }
 }
 

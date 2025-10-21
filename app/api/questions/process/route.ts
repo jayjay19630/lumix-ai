@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFileFromS3 } from "@/lib/aws/s3";
-import { extractTextFromDocument } from "@/lib/aws/textract";
 import {
-  classifyQuestionTopic,
+  extractDocumentFromS3,
+  classifyQuestion,
   generateQuestionExplanation,
-} from "@/lib/aws/bedrock";
+} from "@/lib/ai-service-client";
 import { createQuestion } from "@/lib/aws/dynamodb";
 import type { ApiResponse, Question } from "@/lib/types";
 import { v4 as uuidv4 } from "uuid";
@@ -27,38 +26,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract S3 key from URL (handle both direct URLs and presigned URLs)
+    // Extract S3 bucket and key from URL
+    let bucket: string;
     let s3Key: string;
     try {
       const url = new URL(fileUrl);
-      // Remove leading slash and any query parameters
+      // Extract bucket from hostname (e.g., bucket-name.s3.region.amazonaws.com)
+      bucket = url.hostname.split(".")[0];
+      // Remove leading slash
       s3Key = url.pathname.substring(1);
     } catch {
-      // Fallback: assume it's already just the key
+      // Fallback: use environment variable for bucket
+      bucket = process.env.S3_BUCKET_NAME || "lumix-uploads";
       s3Key = fileUrl;
     }
 
-    // Step 1: Get file from S3
-    const fileBuffer = await getFileFromS3(s3Key);
-
-    // Step 2: Extract text using Textract
-    const textractResult = await extractTextFromDocument(
-      new Uint8Array(fileBuffer),
-    );
+    // Call AI Service to extract text and parse questions using Textract + AI
+    const textractResult = await extractDocumentFromS3(bucket, s3Key);
 
     console.log(
       `Extracted ${textractResult.questions.length} questions from document`,
     );
 
-    // Step 3: Process each question with AI
+    // Process each question with AI Service
     const processedQuestions: Question[] = [];
 
     for (const extractedQ of textractResult.questions) {
       try {
-        // Classify topic and difficulty
-        const classification = await classifyQuestionTopic(extractedQ.text);
+        // Classify topic and difficulty using AI Service
+        const classification = await classifyQuestion(extractedQ.text);
 
-        // Generate explanation and teaching tips
+        // Generate explanation and teaching tips using AI Service
         const explanation = await generateQuestionExplanation(extractedQ.text);
 
         // Create question object

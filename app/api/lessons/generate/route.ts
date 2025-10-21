@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  BedrockRuntimeClient,
-  InvokeModelCommand,
-} from "@aws-sdk/client-bedrock-runtime";
 import { getSession, updateSession } from "@/lib/aws/dynamodb";
 import { createLessonPlan } from "@/lib/aws/dynamodb";
+import { generateLessonPlan as aiGenerateLessonPlan } from "@/lib/ai-service-client";
 import type { LessonPlan } from "@/lib/types";
-
-const bedrockClient = new BedrockRuntimeClient({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,8 +23,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    // Simple AI generation for now
-    const teachingNotes = await generateSimpleLessonPlan(
+    // Call AI Service to generate lesson plan
+    const aiResult = await aiGenerateLessonPlan(
       topic,
       session.duration,
       session.student_id,
@@ -50,10 +39,10 @@ export async function POST(request: NextRequest) {
       date: session.date,
       duration: session.duration,
       created_by: "ai",
-      generation_mode: "simple",
+      generation_mode: "ai-service",
       focus_topics: [topic],
-      teaching_notes: teachingNotes,
-      ai_reasoning: `Generated simple lesson plan for ${session.duration}-minute session on ${topic}.`,
+      teaching_notes: aiResult.teaching_notes,
+      ai_reasoning: aiResult.ai_reasoning,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -76,71 +65,5 @@ export async function POST(request: NextRequest) {
       { error: "Failed to generate lesson plan" },
       { status: 500 },
     );
-  }
-}
-
-async function generateSimpleLessonPlan(
-  topic: string,
-  duration: number,
-  studentId: string,
-): Promise<string> {
-  try {
-    const prompt = `Create a ${duration}-minute tutoring lesson plan on ${topic}.
-
-Structure the lesson into time slots with teaching bullet points.
-Include: review/warmup, main teaching content, practice problems, recap.
-
-Return the teaching notes in this format:
-
-**Warmup (X minutes)**
-- [bullet point]
-- [bullet point]
-
-**Main Teaching Content (X minutes)**
-- [bullet point]
-- [bullet point]
-
-**Practice Problems (X minutes)**
-- [bullet point]
-- [bullet point]
-
-**Recap (X minutes)**
-- [bullet point]
-
-Be concise and practical. Focus on clear, actionable teaching points.`;
-
-    const modelId = process.env.AWS_BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
-
-    const command = new InvokeModelCommand({
-      modelId,
-      contentType: "application/json",
-      accept: "application/json",
-      body: JSON.stringify({
-        messages: [
-          {
-            role: "user",
-            content: [{ text: prompt }],
-          },
-        ],
-        inferenceConfig: {
-          max_new_tokens: 1000,
-          temperature: 0.7,
-        },
-      }),
-    });
-
-    const response = await bedrockClient.send(command);
-    const responseBody = JSON.parse(new TextDecoder().decode(response.body));
-
-    // Extract teaching notes from response
-    const teachingNotes =
-      responseBody.output?.message?.content?.[0]?.text ||
-      responseBody.completion ||
-      "Failed to generate lesson plan content.";
-
-    return teachingNotes;
-  } catch (error) {
-    console.error("Error calling Bedrock:", error);
-    throw new Error("Failed to generate lesson plan with AI");
   }
 }

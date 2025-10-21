@@ -1,0 +1,26 @@
+{
+  "name": "lumix-ai-service",
+  "version": "1.0.0",
+  "description": "AI Service for Lumix - Bedrock, Textract, and AgentCore integration",
+  "main": "src/main.py",
+  "scripts": {
+    "start": "python -m src.main",
+    "deploy": "./deploy.sh lambda",
+    "deploy:docker": "./deploy.sh docker",
+    "deploy:local": "./deploy.sh local",
+    "logs": "serverless logs -f api --tail"
+  },
+  "keywords": [
+    "aws",
+    "bedrock",
+    "textract",
+    "fastapi",
+    "lambda"
+  ],
+  "author": "Lumix Team",
+  "license": "MIT",
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-python-requirements": "^6.1.0"
+  }
+}

@@ -4,8 +4,7 @@ import {
   updateStudent,
   createGradeHistory,
 } from "@/lib/aws/dynamodb";
-import { extractTextFromDocument } from "@/lib/aws/textract";
-import { invokeNovaModel } from "@/lib/aws/bedrock";
+import { extractDocumentText, gradeWorksheet as aiGradeWorksheet } from "@/lib/ai-service-client";
 import { uploadToS3 } from "@/lib/aws/s3";
 import { v4 as uuidv4 } from "uuid";
 import type { GradingResult, GradeHistory } from "@/lib/types";
@@ -36,19 +35,17 @@ export async function POST(
       );
     }
 
-    // Convert file to buffer
+    // Upload original worksheet to S3
     const arrayBuffer = await file.arrayBuffer();
     const buffer = new Uint8Array(arrayBuffer);
-
-    // Upload original worksheet to S3
     const uploadKey = `worksheets/graded/${studentId}/${Date.now()}-${file.name}`;
     const worksheetUrl = await uploadToS3(buffer, uploadKey, file.type);
 
-    // Extract text using Textract
-    const textractResult = await extractTextFromDocument(buffer);
+    // Extract text using AI Service (Textract + AI parsing)
+    const textractResult = await extractDocumentText(file);
 
-    // Use AI to grade the worksheet
-    const gradingResult = await gradeWorksheetWithAI(
+    // Grade the worksheet using AI Service
+    const gradingResult = await aiGradeWorksheet(
       textractResult.extracted_text,
       student.name,
     );
@@ -112,88 +109,4 @@ export async function POST(
   }
 }
 
-/**
- * Strip markdown code blocks from response
- */
-function stripMarkdownCodeBlocks(text: string): string {
-  // Remove markdown code blocks like ```json ... ```
-  let cleaned = text.trim();
-
-  // Check if text starts with ```json or ``` and ends with ```
-  if (cleaned.startsWith("```")) {
-    // Remove opening ```json or ```
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, "");
-    // Remove closing ```
-    cleaned = cleaned.replace(/\n?```\s*$/, "");
-  }
-
-  return cleaned.trim();
-}
-
-/**
- * Use AI to grade worksheet from extracted text
- */
-async function gradeWorksheetWithAI(
-  extractedText: string,
-  studentName: string,
-): Promise<GradingResult> {
-  try {
-    const prompt = `You are an expert math tutor grading a student's worksheet. The student's name is ${studentName}.
-
-Extracted Text from Worksheet:
-${extractedText}
-
-Analyze this worksheet and provide grading results. For each question:
-1. Identify the question and the student's answer
-2. Determine the topic (e.g., Quadratic Equations, Trigonometry, etc.)
-3. Check if the answer is correct
-4. Provide brief feedback
-
-Also identify the student's weaknesses and provide insights for improvement.
-
-Respond with this exact JSON format:
-{
-  "total_questions": 10,
-  "correct_answers": 7,
-  "score": "7/10",
-  "question_results": [
-    {
-      "question_id": "q1",
-      "question_text": "The actual question text",
-      "topic": "Quadratic Equations",
-      "is_correct": true,
-      "student_answer": "x = 2, 3",
-      "correct_answer": "x = 2, 3",
-      "feedback": "Excellent work!"
-    }
-  ],
-  "weaknesses": ["Topic 1", "Topic 2"],
-  "insights": "Overall insights and recommendations for the student..."
-}
-
-Only return valid JSON, no additional text.`;
-
-    const response = await invokeNovaModel({
-      prompt,
-      temperature: 0.3,
-      maxTokens: 4096,
-    });
-
-    // Strip markdown code blocks if present
-    const cleanedResponse = stripMarkdownCodeBlocks(response);
-    const parsed = JSON.parse(cleanedResponse);
-    return parsed;
-  } catch (error) {
-    console.error("Error grading with AI:", error);
-    // Return default grading result if AI fails
-    return {
-      total_questions: 0,
-      correct_answers: 0,
-      score: "0/0",
-      question_results: [],
-      weaknesses: [],
-      insights:
-        "Unable to grade worksheet automatically. Please review manually.",
-    };
-  }
-}
+// AI grading logic moved to AI Service (Python FastAPI)
