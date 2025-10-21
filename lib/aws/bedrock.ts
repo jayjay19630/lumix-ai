@@ -129,6 +129,28 @@ export async function invokeBedrockAgent(
 }
 
 /**
+ * Clean JSON response from markdown code blocks
+ */
+function cleanJsonResponse(response: string): string {
+  // Remove markdown code blocks if present
+  let cleaned = response.trim();
+
+  // Remove ```json or ``` at start
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.substring(7);
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.substring(3);
+  }
+
+  // Remove ``` at end
+  if (cleaned.endsWith("```")) {
+    cleaned = cleaned.substring(0, cleaned.length - 3);
+  }
+
+  return cleaned.trim();
+}
+
+/**
  * Classify question topic using Bedrock Nova
  */
 export async function classifyQuestionTopic(questionText: string): Promise<{
@@ -151,7 +173,8 @@ Only return valid JSON, no additional text.`;
 
   try {
     const response = await invokeNovaModel({ prompt, temperature: 0.3 });
-    return JSON.parse(response);
+    const cleanedResponse = cleanJsonResponse(response);
+    return JSON.parse(cleanedResponse);
   } catch (error) {
     console.error("Error classifying question:", error);
     // Return default classification
@@ -186,7 +209,8 @@ Only return valid JSON, no additional text.`;
 
   try {
     const response = await invokeNovaModel({ prompt, temperature: 0.7 });
-    return JSON.parse(response);
+    const cleanedResponse = cleanJsonResponse(response);
+    return JSON.parse(cleanedResponse);
   } catch (error) {
     console.error("Error generating explanation:", error);
     return {

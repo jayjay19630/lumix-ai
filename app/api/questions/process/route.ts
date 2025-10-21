@@ -27,9 +27,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Extract S3 key from URL
-    const urlParts = fileUrl.split("/");
-    const s3Key = urlParts.slice(3).join("/"); // Remove https://bucket-name.s3.region.amazonaws.com/
+    // Extract S3 key from URL (handle both direct URLs and presigned URLs)
+    let s3Key: string;
+    try {
+      const url = new URL(fileUrl);
+      // Remove leading slash and any query parameters
+      s3Key = url.pathname.substring(1);
+    } catch {
+      // Fallback: assume it's already just the key
+      s3Key = fileUrl;
+    }
 
     // Step 1: Get file from S3
     const fileBuffer = await getFileFromS3(s3Key);

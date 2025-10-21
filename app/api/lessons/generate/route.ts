@@ -119,7 +119,7 @@ Be concise and practical. Focus on clear, actionable teaching points.`;
         messages: [
           {
             role: "user",
-            content: prompt,
+            content: [{ text: prompt }],
           },
         ],
         inferenceConfig: {

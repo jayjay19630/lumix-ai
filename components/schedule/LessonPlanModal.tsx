@@ -52,12 +52,23 @@ export default function LessonPlanModal({
   const [selectedTopic, setSelectedTopic] = useState("");
   const [generatedPlan, setGeneratedPlan] = useState<LessonPlan | null>(null);
 
+  // Worksheet viewing
+  const [attachedWorksheet, setAttachedWorksheet] = useState<Worksheet | null>(null);
+
   const isViewMode = !!existingPlan && !isEditing;
 
   // Fetch available worksheets
   useEffect(() => {
     fetchWorksheets();
   }, []);
+
+  // Fetch attached worksheet if viewing existing plan with worksheet
+  useEffect(() => {
+    if (existingPlan?.worksheet_id && worksheets.length > 0) {
+      fetchAttachedWorksheet(existingPlan.worksheet_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingPlan?.worksheet_id, worksheets.length]);
 
   const fetchWorksheets = async () => {
     try {
@@ -70,7 +81,33 @@ export default function LessonPlanModal({
     }
   };
 
-  const handleManualSave = async (finalize = false) => {
+  const fetchAttachedWorksheet = async (worksheetId: string) => {
+    try {
+      const worksheet = worksheets.find(w => w.worksheet_id === worksheetId);
+      if (worksheet) {
+        setAttachedWorksheet(worksheet);
+      } else {
+        // Fetch from API if not in the list
+        const response = await fetch(`/api/worksheets/${worksheetId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAttachedWorksheet(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching attached worksheet:", error);
+    }
+  };
+
+  const handleViewPDF = () => {
+    if (attachedWorksheet?.pdf_url) {
+      window.open(attachedWorksheet.pdf_url, "_blank");
+    } else {
+      toast.error("Worksheet PDF not available");
+    }
+  };
+
+  const handleManualSave = async () => {
     if (!manualForm.teaching_notes.trim()) {
       toast.error("Teaching notes are required");
       return;
@@ -87,7 +124,7 @@ export default function LessonPlanModal({
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(manualForm),
-          },
+          }
         );
 
         if (!response.ok) throw new Error("Failed to update lesson plan");
@@ -153,7 +190,32 @@ export default function LessonPlanModal({
     }
   };
 
-  const handleAcceptGenerated = () => {
+  const handleAcceptGenerated = async () => {
+    if (!generatedPlan) return;
+
+    // If a worksheet was selected, update the lesson plan with it
+    if (generatedPlan.worksheet_id) {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/lessons/${generatedPlan.lesson_plan_id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            worksheet_id: generatedPlan.worksheet_id,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to attach worksheet");
+      } catch (error) {
+        console.error("Error attaching worksheet:", error);
+        toast.error("Failed to attach worksheet");
+        setLoading(false);
+        return;
+      } finally {
+        setLoading(false);
+      }
+    }
+
     toast.success("Lesson plan saved successfully");
     onSuccess();
     onClose();
@@ -183,7 +245,7 @@ export default function LessonPlanModal({
         `/api/lessons/${existingPlan.lesson_plan_id}`,
         {
           method: "DELETE",
-        },
+        }
       );
 
       if (!response.ok) throw new Error("Failed to delete lesson plan");
@@ -200,299 +262,321 @@ export default function LessonPlanModal({
 
   return (
     <Modal
+      size="xl"
       isOpen={isOpen}
       onClose={onClose}
       title={existingPlan ? "Lesson Plan" : "Create Lesson Plan"}
     >
-      <p className="text-sm text-gray-600 mt-1">
+      <p className="text-sm text-gray-600 mb-4">
         {student.name} • {session.date} • {session.time} ({session.duration}{" "}
         min)
       </p>
 
-      <div className="p-6">
-        {isViewMode ? (
-          // VIEW MODE
-          <div className="space-y-6">
-            {/* Lesson Plan Content */}
+      {isViewMode ? (
+        // VIEW MODE
+        <div className="space-y-6">
+          {/* Lesson Plan Content */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Teaching Notes
+            </h3>
+            <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
+              {existingPlan.teaching_notes}
+            </div>
+          </div>
+
+          {/* Focus Topics */}
+          {existingPlan.focus_topics.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Teaching Notes
+                Focus Topics
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
-                {existingPlan.teaching_notes}
+              <div className="flex flex-wrap gap-2">
+                {existingPlan.focus_topics.map((topic) => (
+                  <span
+                    key={topic}
+                    className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm"
+                  >
+                    {topic}
+                  </span>
+                ))}
               </div>
             </div>
+          )}
 
-            {/* Focus Topics */}
-            {existingPlan.focus_topics.length > 0 && (
+          {/* Worksheet */}
+          {existingPlan.worksheet_id && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Attached Worksheet
+              </h3>
+              {attachedWorksheet && (
+                <div className="mb-2 text-sm text-gray-600">
+                  {attachedWorksheet.title}
+                </div>
+              )}
+              <button
+                onClick={handleViewPDF}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                View PDF
+              </button>
+            </div>
+          )}
+
+          {/* AI Reasoning */}
+          {existingPlan.ai_reasoning && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                AI Generation Details
+              </h3>
+              <div className="bg-blue-50 rounded-lg p-4 text-blue-900 text-sm">
+                {existingPlan.ai_reasoning}
+              </div>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={loading}
+              className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              Delete Plan
+            </button>
+          </div>
+        </div>
+      ) : (
+        // CREATE/EDIT MODE
+        <>
+          {/* Tabs */}
+          {!existingPlan && (
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setActiveTab("manual")}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                  activeTab === "manual"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Manual
+              </button>
+              <button
+                onClick={() => setActiveTab("ai")}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+                  activeTab === "ai"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                AI Generate
+              </button>
+            </div>
+          )}
+
+          {/* Manual Tab */}
+          {(activeTab === "manual" || existingPlan) && !generatedPlan && (
+            <div className="space-y-4">
+              {/* Focus Topics */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Focus Topics
-                </h3>
+                </label>
                 <div className="flex flex-wrap gap-2">
-                  {existingPlan.focus_topics.map((topic) => (
-                    <span
+                  {AVAILABLE_TOPICS.map((topic) => (
+                    <button
                       key={topic}
-                      className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm"
+                      onClick={() => handleToggleTopic(topic)}
+                      className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                        manualForm.focus_topics.includes(topic)
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                     >
                       {topic}
-                    </span>
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
 
-            {/* Worksheet */}
-            {existingPlan.worksheet_id && (
+              {/* Teaching Notes */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Attached Worksheet
-                </h3>
-                <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                  View PDF
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Teaching Notes *
+                </label>
+                <textarea
+                  value={manualForm.teaching_notes}
+                  onChange={(e) =>
+                    setManualForm({
+                      ...manualForm,
+                      teaching_notes: e.target.value,
+                    })
+                  }
+                  rows={12}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  placeholder="Enter lesson plan details, time breakdown, teaching points..."
+                />
+              </div>
+
+              {/* Worksheet Selector */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attach Worksheet (Optional)
+                </label>
+                <select
+                  value={manualForm.worksheet_id}
+                  onChange={(e) =>
+                    setManualForm({
+                      ...manualForm,
+                      worksheet_id: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="">No worksheet</option>
+                  {worksheets.map((worksheet) => (
+                    <option
+                      key={worksheet.worksheet_id}
+                      value={worksheet.worksheet_id}
+                    >
+                      {worksheet.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleManualSave}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                >
+                  {loading
+                    ? "Saving..."
+                    : existingPlan
+                    ? "Update"
+                    : "Save"}
                 </button>
               </div>
-            )}
-
-            {/* AI Reasoning */}
-            {existingPlan.ai_reasoning && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  AI Generation Details
-                </h3>
-                <div className="bg-blue-50 rounded-lg p-4 text-blue-900 text-sm">
-                  {existingPlan.ai_reasoning}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t">
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={loading}
-                className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                Delete Plan
-              </button>
             </div>
-          </div>
-        ) : (
-          // CREATE/EDIT MODE
-          <>
-            {/* Tabs */}
-            {!existingPlan && (
-              <div className="flex gap-2 mb-6">
-                <button
-                  onClick={() => setActiveTab("manual")}
-                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                    activeTab === "manual"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  Manual
-                </button>
-                <button
-                  onClick={() => setActiveTab("ai")}
-                  className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
-                    activeTab === "ai"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  AI Generate
-                </button>
-              </div>
-            )}
+          )}
 
-            {/* Manual Tab */}
-            {(activeTab === "manual" || existingPlan) && !generatedPlan && (
-              <div className="space-y-4">
-                {/* Focus Topics */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Focus Topics
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {AVAILABLE_TOPICS.map((topic) => (
-                      <button
-                        key={topic}
-                        onClick={() => handleToggleTopic(topic)}
-                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                          manualForm.focus_topics.includes(topic)
-                            ? "bg-indigo-600 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
-                      >
-                        {topic}
-                      </button>
-                    ))}
+          {/* AI Tab */}
+          {activeTab === "ai" && !existingPlan && (
+            <div className="space-y-4">
+              {!generatedPlan ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Topic
+                    </label>
+                    <select
+                      value={selectedTopic}
+                      onChange={(e) => setSelectedTopic(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="">Choose a topic...</option>
+                      {AVAILABLE_TOPICS.map((topic) => (
+                        <option key={topic} value={topic}>
+                          {topic}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
 
-                {/* Teaching Notes */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Teaching Notes *
-                  </label>
-                  <textarea
-                    value={manualForm.teaching_notes}
-                    onChange={(e) =>
-                      setManualForm({
-                        ...manualForm,
-                        teaching_notes: e.target.value,
-                      })
-                    }
-                    rows={12}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-                    placeholder="Enter lesson plan details, time breakdown, teaching points..."
-                  />
-                </div>
-
-                {/* Worksheet Selector */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Attach Worksheet (Optional)
-                  </label>
-                  <select
-                    value={manualForm.worksheet_id}
-                    onChange={(e) =>
-                      setManualForm({
-                        ...manualForm,
-                        worksheet_id: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">No worksheet</option>
-                    {worksheets.map((worksheet) => (
-                      <option
-                        key={worksheet.worksheet_id}
-                        value={worksheet.worksheet_id}
-                      >
-                        {worksheet.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-2">
                   <button
-                    onClick={onClose}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    onClick={handleAIGenerate}
+                    disabled={loading || !selectedTopic}
+                    className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Cancel
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Lesson Plan"
+                    )}
                   </button>
-                  <button
-                    onClick={() => handleManualSave(false)}
-                    disabled={loading}
-                    className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
-                  >
-                    {loading
-                      ? "Saving..."
-                      : existingPlan
-                        ? "Update"
-                        : "Save Draft"}
-                  </button>
-                  {!existingPlan && (
-                    <button
-                      onClick={() => handleManualSave(true)}
-                      disabled={loading}
-                      className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                    >
-                      Save & Finalize
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* AI Tab */}
-            {activeTab === "ai" && !existingPlan && (
-              <div className="space-y-4">
-                {!generatedPlan ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Topic
-                      </label>
-                      <select
-                        value={selectedTopic}
-                        onChange={(e) => setSelectedTopic(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                      >
-                        <option value="">Choose a topic...</option>
-                        {AVAILABLE_TOPICS.map((topic) => (
-                          <option key={topic} value={topic}>
-                            {topic}
-                          </option>
-                        ))}
-                      </select>
+                </>
+              ) : (
+                <>
+                  {/* Generated Plan Preview */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold text-green-900 mb-2">
+                      Generated Lesson Plan
+                    </h3>
+                    <div className="bg-white rounded p-4 mt-3 whitespace-pre-wrap text-gray-700">
+                      {generatedPlan.teaching_notes}
                     </div>
 
-                    <button
-                      onClick={handleAIGenerate}
-                      disabled={loading || !selectedTopic}
-                      className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {loading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          Generating...
-                        </>
-                      ) : (
-                        "Generate Lesson Plan"
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {/* Generated Plan Preview */}
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-green-900 mb-2">
-                        Generated Lesson Plan
-                      </h3>
-                      <div className="bg-white rounded p-4 mt-3 whitespace-pre-wrap text-gray-700">
-                        {generatedPlan.teaching_notes}
+                    {generatedPlan.ai_reasoning && (
+                      <div className="mt-3 text-sm text-green-800">
+                        {generatedPlan.ai_reasoning}
                       </div>
+                    )}
+                  </div>
 
-                      {generatedPlan.ai_reasoning && (
-                        <div className="mt-3 text-sm text-green-800">
-                          {generatedPlan.ai_reasoning}
-                        </div>
-                      )}
-                    </div>
+                  {/* Worksheet Selector for AI Generated Plan */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Attach Worksheet (Optional)
+                    </label>
+                    <select
+                      value={generatedPlan.worksheet_id || ""}
+                      onChange={(e) =>
+                        setGeneratedPlan({
+                          ...generatedPlan,
+                          worksheet_id: e.target.value || undefined,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <option value="">No worksheet</option>
+                      {worksheets.map((worksheet) => (
+                        <option key={worksheet.worksheet_id} value={worksheet.worksheet_id}>
+                          {worksheet.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-4">
-                      <button
-                        onClick={handleRegenerate}
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        Regenerate
-                      </button>
-                      <button
-                        onClick={handleAcceptGenerated}
-                        className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      >
-                        Accept & Save
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={handleRegenerate}
+                      className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Regenerate
+                    </button>
+                    <button
+                      onClick={handleAcceptGenerated}
+                      className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      Accept & Save
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </Modal>
   );
 }
