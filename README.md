@@ -36,7 +36,7 @@ An AI-powered tutor assistant web application built with Next.js 15, helping tut
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone git@github.com:jayjay19630/lumix-ai.git
 cd lumix
 ```
 
