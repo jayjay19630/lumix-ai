@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStudent, updateStudent, createSession } from "@/lib/aws/dynamodb";
+import { getStudent, updateStudent, createGradeHistory } from "@/lib/aws/dynamodb";
 import { extractTextFromDocument } from "@/lib/aws/textract";
 import { invokeNovaModel } from "@/lib/aws/bedrock";
 import { uploadToS3 } from "@/lib/aws/s3";
 import { v4 as uuidv4 } from "uuid";
-import type { GradingResult, Session } from "@/lib/types";
+import type { GradingResult, GradeHistory } from "@/lib/types";
 
 // POST /api/students/[id]/grade - Grade a worksheet
 export async function POST(
@@ -74,9 +74,9 @@ export async function POST(
       last_session: new Date().toISOString(),
     });
 
-    // Create session record
-    const session: Session = {
-      session_id: uuidv4(),
+    // Create grade history record
+    const gradeHistory: GradeHistory = {
+      grade_history_id: uuidv4(),
       student_id: studentId,
       lesson_plan_id: lessonPlanId || undefined,
       date: new Date().toISOString(),
@@ -94,11 +94,11 @@ export async function POST(
       created_at: new Date().toISOString(),
     };
 
-    await createSession(session);
+    await createGradeHistory(gradeHistory);
 
     return NextResponse.json({
       grading_result: gradingResult,
-      session,
+      gradeHistory,
       updated_accuracy: updatedAccuracy,
       message: "Worksheet graded successfully",
     });

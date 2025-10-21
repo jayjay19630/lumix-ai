@@ -118,8 +118,8 @@ DATABASE SCHEMA (DynamoDB Tables):
    - worksheet_url (string) - S3 URL
    - created_at
 
-4. sessions
-   - PK: session_id (string)
+4. grade_history
+   - PK: grade_history_id (string)
    - student_id (string) - GSI
    - lesson_plan_id (string)
    - date (string)
@@ -128,9 +128,20 @@ DATABASE SCHEMA (DynamoDB Tables):
    - questions_attempted (list)
    - score (string)
    - graded_worksheet_url (string)
+   - grading_result (map) - Detailed grading results
    - tutor_notes (string)
    - agent_insights (string)
    - created_at
+
+5. session_schedules (Recurring session schedules - separate from grading)
+   - PK: schedule_id (string)
+   - student_id (string) - GSI
+   - day_of_week (number) - 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+   - time (string) - e.g., "14:00" (24-hour format)
+   - duration (number) - minutes
+   - focus_topics (list)
+   - is_active (boolean)
+   - created_at, updated_at
 
 KEY FEATURES TO IMPLEMENT:
 
@@ -162,8 +173,8 @@ PHASE 3 - Students & Grading (Tool 2):
 2. Student detail page showing:
    - Profile information
    - Performance by topic (chart)
-   - Session history
-   - Schedule
+   - Grade history (past graded worksheets)
+   - Schedule (recurring session schedules)
 3. Upload graded worksheet functionality
 4. API endpoint to:
    - Extract answers using Textract
@@ -173,17 +184,16 @@ PHASE 3 - Students & Grading (Tool 2):
 5. Display grading results and auto-update student weaknesses
 
 PHASE 4 - Schedule & Lesson Plans (Tool 3):
-1. Calendar view showing upcoming sessions
-2. Click session to open lesson plan modal
+1. Calendar view showing upcoming sessions based on student session schedules
+2. Click upcoming session to open lesson plan modal
 3. API endpoint to generate lesson plan:
    - Use Bedrock Agent to orchestrate
    - Query student profile from DynamoDB
-   - Query last session history
+   - Query recent grade history to understand student performance
    - Use Nova reasoning to:
      * Analyze student weaknesses
-     * Select appropriate questions from bank
-     * Plan difficulty progression
-     * Structure lesson timeline
+     * Select appropriate questions from bank to create worksheet
+     * Structure lesson content to teach
    - Generate PDF worksheet (use a library like pdfkit or jsPDF)
    - Store in S3
    - Save lesson plan to DynamoDB
@@ -248,7 +258,8 @@ AWS_BEDROCK_AGENT_ALIAS_ID=your_alias_id
 DYNAMODB_STUDENTS_TABLE=lumix-students
 DYNAMODB_QUESTIONS_TABLE=lumix-questions
 DYNAMODB_LESSONS_TABLE=lumix-lesson-plans
-DYNAMODB_SESSIONS_TABLE=lumix-sessions
+DYNAMODB_GRADE_HISTORY_TABLE=lumix-grade-history
+DYNAMODB_SESSION_SCHEDULES_TABLE=lumix-session-schedules
 S3_BUCKET_NAME=lumix-files
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```

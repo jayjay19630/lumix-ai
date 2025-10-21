@@ -20,7 +20,7 @@ import {
   Plus,
   Edit,
 } from "lucide-react";
-import type { Student, Session, RecurringSessionSchedule } from "@/lib/types";
+import type { Student, GradeHistory, RecurringSessionSchedule } from "@/lib/types";
 
 export default function StudentDetailPage({
   params,
@@ -30,11 +30,11 @@ export default function StudentDetailPage({
   const resolvedParams = use(params);
   const router = useRouter();
   const [student, setStudent] = useState<Student | null>(null);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [gradeHistory, setGradeHistory] = useState<GradeHistory[]>([]);
   const [schedules, setSchedules] = useState<RecurringSessionSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [selectedGradeHistory, setSelectedGradeHistory] = useState<GradeHistory | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<RecurringSessionSchedule | null>(null);
 
@@ -54,7 +54,7 @@ export default function StudentDetailPage({
       if (studentResponse.ok) {
         const data = await studentResponse.json();
         setStudent(data.student);
-        setSessions(data.sessions || []);
+        setGradeHistory(data.gradeHistory || []);
       } else if (studentResponse.status === 404) {
         router.push("/students");
       }
@@ -182,7 +182,7 @@ export default function StudentDetailPage({
           <CardContent>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-gray-900">
-                {sessions.length}
+                {gradeHistory.length}
               </span>
               <Calendar className="h-5 w-5 text-gray-400" />
             </div>
@@ -322,50 +322,50 @@ export default function StudentDetailPage({
         </CardContent>
       </Card>
 
-      {/* Session History */}
+      {/* Grade History */}
       <Card>
         <CardHeader>
-          <CardTitle>Session History</CardTitle>
+          <CardTitle>Grade History</CardTitle>
         </CardHeader>
         <CardContent>
-          {sessions.length === 0 ? (
+          {gradeHistory.length === 0 ? (
             <div className="text-center py-8">
               <FileCheck className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">No sessions yet</p>
+              <p className="text-gray-500">No graded worksheets yet</p>
               <p className="text-sm text-gray-400 mt-1">
-                Upload a graded worksheet to create the first session
+                Upload a graded worksheet to create the first grade record
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {sessions
+              {gradeHistory
                 .sort(
                   (a, b) =>
                     new Date(b.date).getTime() - new Date(a.date).getTime()
                 )
-                .map((session) => (
+                .map((grade) => (
                   <div
-                    key={session.session_id}
+                    key={grade.grade_history_id}
                     className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <p className="font-medium text-gray-900">
-                            {new Date(session.date).toLocaleDateString("en-US", {
+                            {new Date(grade.date).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "long",
                               day: "numeric",
                             })}
                           </p>
-                          {session.score && (
+                          {grade.score && (
                             <span className="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded">
-                              {session.score}
+                              {grade.score}
                             </span>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2 mb-2">
-                          {session.topics_covered.map((topic) => (
+                          {grade.topics_covered.map((topic) => (
                             <span
                               key={topic}
                               className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded"
@@ -374,26 +374,26 @@ export default function StudentDetailPage({
                             </span>
                           ))}
                         </div>
-                        {session.agent_insights && (
+                        {grade.agent_insights && (
                           <p className="text-sm text-gray-600 mt-2">
-                            {session.agent_insights}
+                            {grade.agent_insights}
                           </p>
                         )}
                       </div>
                       <div className="flex gap-2">
-                        {session.grading_result && (
+                        {grade.grading_result && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setSelectedSession(session)}
+                            onClick={() => setSelectedGradeHistory(grade)}
                             className="text-indigo-600 hover:text-indigo-700"
                           >
                             View Results
                           </Button>
                         )}
-                        {session.graded_worksheet_url && (
+                        {grade.graded_worksheet_url && (
                           <a
-                            href={session.graded_worksheet_url}
+                            href={grade.graded_worksheet_url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-gray-600 hover:text-gray-700 font-medium px-3 py-1.5"
@@ -421,13 +421,13 @@ export default function StudentDetailPage({
       />
 
       {/* Grading Result Modal */}
-      {selectedSession?.grading_result && (
+      {selectedGradeHistory?.grading_result && (
         <GradingResultModal
-          isOpen={!!selectedSession}
-          onClose={() => setSelectedSession(null)}
-          gradingResult={selectedSession.grading_result}
+          isOpen={!!selectedGradeHistory}
+          onClose={() => setSelectedGradeHistory(null)}
+          gradingResult={selectedGradeHistory.grading_result}
           studentName={student.name}
-          date={selectedSession.date}
+          date={selectedGradeHistory.date}
         />
       )}
 

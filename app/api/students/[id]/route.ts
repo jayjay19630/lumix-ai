@@ -3,7 +3,7 @@ import {
   getStudent,
   updateStudent,
   deleteStudent,
-  getSessionsByStudent,
+  getGradeHistoryByStudent,
 } from "@/lib/aws/dynamodb";
 
 // GET /api/students/[id] - Get student by ID
@@ -22,12 +22,12 @@ export async function GET(
       );
     }
 
-    // Also fetch session history
-    const sessions = await getSessionsByStudent(id);
+    // Also fetch grade history
+    const gradeHistory = await getGradeHistoryByStudent(id);
 
     return NextResponse.json({
       student,
-      sessions,
+      gradeHistory,
     });
   } catch (error) {
     console.error("Error fetching student:", error);

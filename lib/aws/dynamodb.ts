@@ -10,7 +10,7 @@ import {
   ScanCommandInput,
   QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import type { Student, Question, LessonPlan, Session, RecurringSessionSchedule } from "../types";
+import type { Student, Question, LessonPlan, GradeHistory, RecurringSessionSchedule } from "../types";
 
 // Initialize DynamoDB Client
 const dynamoClient = new DynamoDBClient({
@@ -34,7 +34,7 @@ const TABLES = {
   STUDENTS: process.env.DYNAMODB_STUDENTS_TABLE || "lumix-students",
   QUESTIONS: process.env.DYNAMODB_QUESTIONS_TABLE || "lumix-questions",
   LESSONS: process.env.DYNAMODB_LESSONS_TABLE || "lumix-lesson-plans",
-  SESSIONS: process.env.DYNAMODB_SESSIONS_TABLE || "lumix-sessions",
+  GRADE_HISTORY: process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
   SESSION_SCHEDULES: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
 };
 
@@ -294,49 +294,49 @@ export async function createLessonPlan(lessonPlan: LessonPlan): Promise<LessonPl
   }
 }
 
-// ============ Session Operations ============
+// ============ Grade History Operations ============
 
-export async function getSession(sessionId: string): Promise<Session | null> {
+export async function getGradeHistory(gradeHistoryId: string): Promise<GradeHistory | null> {
   try {
     const command = new GetCommand({
-      TableName: TABLES.SESSIONS,
-      Key: { session_id: sessionId },
+      TableName: TABLES.GRADE_HISTORY,
+      Key: { grade_history_id: gradeHistoryId },
     });
     const response = await docClient.send(command);
-    return (response.Item as Session) || null;
+    return (response.Item as GradeHistory) || null;
   } catch (error) {
-    console.error("Error getting session:", error);
+    console.error("Error getting grade history:", error);
     throw error;
   }
 }
 
-export async function getSessionsByStudent(studentId: string): Promise<Session[]> {
+export async function getGradeHistoryByStudent(studentId: string): Promise<GradeHistory[]> {
   try {
     const command = new ScanCommand({
-      TableName: TABLES.SESSIONS,
+      TableName: TABLES.GRADE_HISTORY,
       FilterExpression: "student_id = :student_id",
       ExpressionAttributeValues: {
         ":student_id": studentId,
       },
     });
     const response = await docClient.send(command);
-    return (response.Items as Session[]) || [];
+    return (response.Items as GradeHistory[]) || [];
   } catch (error) {
-    console.error("Error getting sessions by student:", error);
+    console.error("Error getting grade history by student:", error);
     throw error;
   }
 }
 
-export async function createSession(session: Session): Promise<Session> {
+export async function createGradeHistory(gradeHistory: GradeHistory): Promise<GradeHistory> {
   try {
     const command = new PutCommand({
-      TableName: TABLES.SESSIONS,
-      Item: session,
+      TableName: TABLES.GRADE_HISTORY,
+      Item: gradeHistory,
     });
     await docClient.send(command);
-    return session;
+    return gradeHistory;
   } catch (error) {
-    console.error("Error creating session:", error);
+    console.error("Error creating grade history:", error);
     throw error;
   }
 }

@@ -81,9 +81,9 @@ export interface LessonPlan {
   created_at: string;
 }
 
-// Session Types
-export interface Session {
-  session_id: string;
+// Grade History Types
+export interface GradeHistory {
+  grade_history_id: string;
   student_id: string;
   lesson_plan_id?: string;
   date: string;

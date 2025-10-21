@@ -120,12 +120,12 @@ async function createAllTables(): Promise<void> {
     ],
   });
 
-  // Sessions Table
+  // Grade History Table
   await createTable({
-    TableName: process.env.DYNAMODB_SESSIONS_TABLE || "lumix-sessions",
-    KeySchema: [{ AttributeName: "session_id", KeyType: "HASH" }],
+    TableName: process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
+    KeySchema: [{ AttributeName: "grade_history_id", KeyType: "HASH" }],
     AttributeDefinitions: [
-      { AttributeName: "session_id", AttributeType: "S" },
+      { AttributeName: "grade_history_id", AttributeType: "S" },
       { AttributeName: "student_id", AttributeType: "S" },
     ],
     BillingMode: "PAY_PER_REQUEST",
