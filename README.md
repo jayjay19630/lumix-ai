@@ -86,43 +86,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-## Project Structure
-
-```
-lumix/
-├── app/                          # Next.js app directory
-│   ├── (dashboard)/             # Dashboard route group
-│   │   ├── layout.tsx           # Dashboard layout with sidebar + AI
-│   │   ├── page.tsx             # Dashboard home
-│   │   ├── students/            # Students pages
-│   │   ├── questions/           # Questions pages
-│   │   └── schedule/            # Schedule pages
-│   ├── api/                     # API routes
-│   │   └── agent/               # AI agent endpoint
-│   ├── layout.tsx               # Root layout
-│   └── globals.css              # Global styles
-├── components/
-│   ├── layout/                  # Layout components
-│   │   ├── Sidebar.tsx          # Left navigation sidebar
-│   │   ├── Header.tsx           # Top header
-│   │   └── AIAgent.tsx          # Right AI chat sidebar
-│   └── ui/                      # Reusable UI components
-│       ├── Button.tsx           # Button component
-│       ├── Card.tsx             # Card component
-│       └── Modal.tsx            # Modal component
-├── lib/
-│   ├── aws/                     # AWS client configurations
-│   │   ├── bedrock.ts           # Bedrock client & helpers
-│   │   ├── textract.ts          # Textract OCR functions
-│   │   ├── dynamodb.ts          # DynamoDB operations
-│   │   └── s3.ts                # S3 file operations
-│   ├── types.ts                 # TypeScript types
-│   └── utils.ts                 # Helper functions
-├── scripts/
-│   └── create-dynamodb-tables.ts # DynamoDB setup script
-└── public/                      # Static assets
-```
-
 ## Troubleshooting
 
 ### Node Version Error
