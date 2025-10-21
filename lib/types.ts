@@ -25,6 +25,20 @@ export interface RecurringSessionSchedule {
   updated_at: string;
 }
 
+// Session (individual scheduled session)
+export interface Session {
+  session_id: string; // format: "sess_YYYYMMDD_studentId"
+  student_id: string;
+  schedule_id?: string; // if auto-generated from recurring schedule
+  date: string; // YYYY-MM-DD
+  time: string; // HH:MM
+  duration: number; // minutes
+  lesson_plan_id?: string;
+  notes?: string;
+  created_by: "auto" | "manual";
+  created_at: string;
+}
+
 // Question Types
 export type QuestionDifficulty = "Easy" | "Medium" | "Hard";
 

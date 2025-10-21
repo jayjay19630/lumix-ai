@@ -10,7 +10,7 @@ import {
   ScanCommandInput,
   QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import type { Student, Question, LessonPlan, GradeHistory, RecurringSessionSchedule, Worksheet } from "../types";
+import type { Student, Question, LessonPlan, GradeHistory, RecurringSessionSchedule, Worksheet, Session } from "../types";
 
 // Initialize DynamoDB Client
 const dynamoClient = new DynamoDBClient({
@@ -37,6 +37,7 @@ const TABLES = {
   GRADE_HISTORY: process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
   SESSION_SCHEDULES: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
   WORKSHEETS: process.env.DYNAMODB_WORKSHEETS_TABLE || "lumix-worksheets",
+  SESSIONS: process.env.DYNAMODB_SESSIONS_TABLE || "lumix-sessions",
 };
 
 // ============ Student Operations ============
@@ -520,6 +521,135 @@ export async function deleteWorksheet(worksheetId: string): Promise<void> {
     await docClient.send(command);
   } catch (error) {
     console.error("Error deleting worksheet:", error);
+    throw error;
+  }
+}
+
+// ============ Session Operations ============
+
+export async function getSession(sessionId: string): Promise<Session | null> {
+  try {
+    const command = new GetCommand({
+      TableName: TABLES.SESSIONS,
+      Key: { session_id: sessionId },
+    });
+    const response = await docClient.send(command);
+    return (response.Item as Session) || null;
+  } catch (error) {
+    console.error("Error getting session:", error);
+    throw error;
+  }
+}
+
+export async function getAllSessions(): Promise<Session[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: TABLES.SESSIONS,
+    });
+    const response = await docClient.send(command);
+    return (response.Items as Session[]) || [];
+  } catch (error) {
+    console.error("Error getting all sessions:", error);
+    throw error;
+  }
+}
+
+export async function getSessionsByStudent(studentId: string): Promise<Session[]> {
+  try {
+    const command = new QueryCommand({
+      TableName: TABLES.SESSIONS,
+      IndexName: "StudentIndex",
+      KeyConditionExpression: "student_id = :student_id",
+      ExpressionAttributeValues: {
+        ":student_id": studentId,
+      },
+    });
+    const response = await docClient.send(command);
+    return (response.Items as Session[]) || [];
+  } catch (error) {
+    console.error("Error getting sessions by student:", error);
+    throw error;
+  }
+}
+
+export async function getSessionsByDateRange(startDate: string, endDate: string): Promise<Session[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: TABLES.SESSIONS,
+      FilterExpression: "#date BETWEEN :startDate AND :endDate",
+      ExpressionAttributeNames: {
+        "#date": "date",
+      },
+      ExpressionAttributeValues: {
+        ":startDate": startDate,
+        ":endDate": endDate,
+      },
+    });
+    const response = await docClient.send(command);
+    return (response.Items as Session[]) || [];
+  } catch (error) {
+    console.error("Error getting sessions by date range:", error);
+    throw error;
+  }
+}
+
+export async function createSession(session: Session): Promise<Session> {
+  try {
+    const command = new PutCommand({
+      TableName: TABLES.SESSIONS,
+      Item: session,
+    });
+    await docClient.send(command);
+    return session;
+  } catch (error) {
+    console.error("Error creating session:", error);
+    throw error;
+  }
+}
+
+export async function updateSession(
+  sessionId: string,
+  updates: Partial<Session>
+): Promise<Session> {
+  try {
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, unknown> = {};
+
+    Object.entries(updates).forEach(([key, value], index) => {
+      if (key !== "session_id") {
+        updateExpressions.push(`#attr${index} = :val${index}`);
+        expressionAttributeNames[`#attr${index}`] = key;
+        expressionAttributeValues[`:val${index}`] = value;
+      }
+    });
+
+    const command = new UpdateCommand({
+      TableName: TABLES.SESSIONS,
+      Key: { session_id: sessionId },
+      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    });
+
+    const response = await docClient.send(command);
+    return response.Attributes as Session;
+  } catch (error) {
+    console.error("Error updating session:", error);
+    throw error;
+  }
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  try {
+    const command = new DeleteCommand({
+      TableName: TABLES.SESSIONS,
+      Key: { session_id: sessionId },
+    });
+    await docClient.send(command);
+  } catch (error) {
+    console.error("Error deleting session:", error);
     throw error;
   }
 }

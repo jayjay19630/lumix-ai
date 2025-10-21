@@ -174,6 +174,30 @@ async function createAllTables(): Promise<void> {
     ],
   });
 
+  // Sessions Table (individual scheduled sessions)
+  await createTable({
+    TableName: process.env.DYNAMODB_SESSIONS_TABLE || "lumix-sessions",
+    KeySchema: [{ AttributeName: "session_id", KeyType: "HASH" }],
+    AttributeDefinitions: [
+      { AttributeName: "session_id", AttributeType: "S" },
+      { AttributeName: "student_id", AttributeType: "S" },
+      { AttributeName: "date", AttributeType: "S" },
+    ],
+    BillingMode: "PAY_PER_REQUEST",
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: "StudentIndex",
+        KeySchema: [{ AttributeName: "student_id", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+      {
+        IndexName: "DateIndex",
+        KeySchema: [{ AttributeName: "date", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+    ],
+  });
+
   console.log("\n✓ All tables created successfully!");
 }
 
