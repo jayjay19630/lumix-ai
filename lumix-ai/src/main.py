@@ -2,12 +2,14 @@
 Lumix AI Service - FastAPI Application
 Handles all AI-related processing: Bedrock generation, Textract OCR, grading, etc.
 """
-from fastapi import FastAPI, UploadFile, File, HTTPException, Body
+
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from mangum import Mangum
-import json
+from .agent import lumix_agent
+import uvicorn
 
 from .services import bedrock_service, textract_service
 from . import config
@@ -30,6 +32,7 @@ app.add_middleware(
 
 
 # ===== REQUEST/RESPONSE MODELS =====
+
 
 class ClassifyQuestionRequest(BaseModel):
     question_text: str
@@ -62,6 +65,7 @@ class ProcessDocumentS3Request(BaseModel):
 
 # ===== HEALTH CHECK =====
 
+
 @app.get("/")
 async def root():
     """Health check endpoint"""
@@ -85,6 +89,7 @@ async def health_check():
 
 # ===== QUESTION PROCESSING =====
 
+
 @app.post("/api/questions/classify")
 async def classify_question(request: ClassifyQuestionRequest):
     """
@@ -107,7 +112,9 @@ async def generate_explanation(request: GenerateExplanationRequest):
     Lambda Function Name: lumix-generate-explanation
     """
     try:
-        result = await bedrock_service.generate_question_explanation(request.question_text)
+        result = await bedrock_service.generate_question_explanation(
+            request.question_text
+        )
         return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -122,8 +129,7 @@ async def select_questions(request: SelectQuestionsRequest):
     """
     try:
         indices = await bedrock_service.select_questions_with_ai(
-            request.questions,
-            request.criteria
+            request.questions, request.criteria
         )
         return {"success": True, "data": {"selectedIndices": indices}}
     except Exception as e:
@@ -131,6 +137,7 @@ async def select_questions(request: SelectQuestionsRequest):
 
 
 # ===== DOCUMENT PROCESSING (TEXTRACT + AI) =====
+
 
 @app.post("/api/documents/extract")
 async def extract_document_text(file: UploadFile = File(...)):
@@ -155,7 +162,9 @@ async def extract_document_from_s3(request: ProcessDocumentS3Request):
     Lambda Function Name: lumix-extract-document-s3
     """
     try:
-        result = await textract_service.extract_text_from_s3(request.bucket, request.key)
+        result = await textract_service.extract_text_from_s3(
+            request.bucket, request.key
+        )
         return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -178,6 +187,7 @@ async def extract_answers(file: UploadFile = File(...)):
 
 # ===== LESSON PLAN GENERATION =====
 
+
 @app.post("/api/lessons/generate")
 async def generate_lesson_plan(request: GenerateLessonPlanRequest):
     """
@@ -187,22 +197,21 @@ async def generate_lesson_plan(request: GenerateLessonPlanRequest):
     """
     try:
         teaching_notes = await bedrock_service.generate_lesson_plan(
-            request.topic,
-            request.duration,
-            request.student_id
+            request.topic, request.duration, request.student_id
         )
         return {
             "success": True,
             "data": {
                 "teaching_notes": teaching_notes,
                 "ai_reasoning": f"Generated {request.duration}-minute lesson plan on {request.topic}",
-            }
+            },
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # ===== GRADING =====
+
 
 @app.post("/api/grading/grade-worksheet")
 async def grade_worksheet(request: GradeWorksheetRequest):
@@ -213,15 +222,15 @@ async def grade_worksheet(request: GradeWorksheetRequest):
     """
     try:
         result = await bedrock_service.grade_worksheet_with_ai(
-            request.extracted_text,
-            request.student_name
+            request.extracted_text, request.student_name
         )
         return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ===== AGENT ORCHESTRATION (PLACEHOLDER FOR FUTURE AGENTCORE) =====
+# ===== AGENT ORCHESTRATION WITH STRANDS =====
+
 
 class AgentChatRequest(BaseModel):
     message: str
@@ -232,20 +241,63 @@ class AgentChatRequest(BaseModel):
 @app.post("/api/agent/chat")
 async def agent_chat(request: AgentChatRequest):
     """
-    Agent chat endpoint - placeholder for Bedrock AgentCore integration
+    Agent chat endpoint - Bedrock AgentCore integration with Strands
 
     Lambda Function Name: lumix-agent-chat
 
-    TODO: Integrate with Bedrock AgentCore SDK and Strands
+    Uses Strands Agent SDK with Bedrock Nova model for intelligent orchestration
     """
-    return {
-        "success": True,
-        "data": {
-            "response": "Agent orchestration endpoint ready. Bedrock AgentCore integration coming soon.",
-            "conversation_id": request.conversation_id or "new-session",
-            "action_traces": [],
+    try:
+        # Invoke the Lumix agent
+        result = lumix_agent(request.message)
+
+        # Extract action traces from the agent's execution
+        action_traces = []
+        if hasattr(result, "tool_calls") and result.tool_calls:
+            for tool_call in result.tool_calls:
+                action_traces.append(
+                    {
+                        "tool": (
+                            tool_call.name if hasattr(tool_call, "name") else "unknown"
+                        ),
+                        "input": (
+                            tool_call.arguments
+                            if hasattr(tool_call, "arguments")
+                            else {}
+                        ),
+                        "output": None,  # Will be filled by tool execution
+                    }
+                )
+
+        # Extract response text from the agent result
+        response_text = ""
+        if hasattr(result, 'message'):
+            # Handle message dict with content array (Strands format)
+            if isinstance(result.message, dict):
+                content = result.message.get('content', [])
+                if content and isinstance(content, list) and len(content) > 0:
+                    response_text = content[0].get('text', str(result.message))
+                else:
+                    response_text = str(result.message)
+            else:
+                response_text = str(result.message)
+        else:
+            response_text = str(result)
+
+        return {
+            "success": True,
+            "data": {
+                "response": response_text,
+                "conversation_id": request.conversation_id or "new-session",
+                "action_traces": action_traces,
+                "sources": [],  # Can be populated from tool results
+            },
         }
-    }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Agent processing failed: {str(e)}"
+        )
 
 
 # ===== LAMBDA HANDLER =====
@@ -256,5 +308,5 @@ handler = Mangum(app, lifespan="off")
 
 # For local development
 if __name__ == "__main__":
-    import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

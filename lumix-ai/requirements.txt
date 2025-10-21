@@ -9,5 +9,8 @@ python-multipart>=0.0.6
 boto3>=1.34.0
 botocore>=1.34.0
 
+# Strands Agent SDK
+strands-agents
+
 # Utilities
 python-dotenv>=1.0.0
