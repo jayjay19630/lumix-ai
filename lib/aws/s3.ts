@@ -21,6 +21,7 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME || "lumix-files";
 
 /**
  * Upload file to S3
+ * Returns a presigned URL valid for 7 days
  */
 export async function uploadFileToS3(
   fileBuffer: Buffer,
@@ -41,8 +42,9 @@ export async function uploadFileToS3(
     const command = new PutObjectCommand(input);
     await s3Client.send(command);
 
-    // Return the S3 URL
-    return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${key}`;
+    // Generate a presigned URL for accessing the file (valid for 7 days)
+    const presignedUrl = await generatePresignedDownloadUrl(key, 604800); // 7 days in seconds
+    return presignedUrl;
   } catch (error) {
     console.error("Error uploading file to S3:", error);
     throw error;
@@ -51,6 +53,7 @@ export async function uploadFileToS3(
 
 /**
  * Upload file to S3 with custom key
+ * Returns a presigned URL valid for 7 days
  */
 export async function uploadToS3(
   fileBuffer: Uint8Array | Buffer,
@@ -68,8 +71,9 @@ export async function uploadToS3(
     const command = new PutObjectCommand(input);
     await s3Client.send(command);
 
-    // Return the S3 URL
-    return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${key}`;
+    // Generate a presigned URL for accessing the file (valid for 7 days)
+    const presignedUrl = await generatePresignedDownloadUrl(key, 604800); // 7 days in seconds
+    return presignedUrl;
   } catch (error) {
     console.error("Error uploading file to S3:", error);
     throw error;
