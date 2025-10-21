@@ -58,6 +58,7 @@ export interface Question {
 
 // Lesson Plan Types
 export type LessonStatus = "draft" | "generated" | "completed";
+export type GenerationMode = "simple" | "advanced";
 
 export interface LessonStructure {
   warmup: {
@@ -82,17 +83,19 @@ export interface LessonStructure {
 }
 
 export interface LessonPlan {
-  lesson_id: string;
+  lesson_plan_id: string;
+  session_id: string;
   student_id: string;
-  date: string; // ISO date
-  scheduled_time: string;
+  date: string; // YYYY-MM-DD
   duration: number; // minutes
-  status: LessonStatus;
-  objectives: string[];
-  structure: LessonStructure;
-  agent_reasoning?: string;
-  worksheet_url?: string; // S3 URL
+  created_by: "manual" | "ai";
+  generation_mode?: GenerationMode; // only if AI-generated
+  focus_topics: string[];
+  worksheet_id?: string; // links to existing worksheet
+  teaching_notes: string;
+  ai_reasoning?: string; // only if AI-generated
   created_at: string;
+  updated_at: string;
 }
 
 // Grade History Types

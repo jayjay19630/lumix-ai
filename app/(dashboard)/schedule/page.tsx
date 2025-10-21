@@ -15,8 +15,9 @@ import {
   isSameDay,
   parseISO,
 } from "date-fns";
-import type { Session, Student } from "@/lib/types";
+import type { Session, Student, LessonPlan } from "@/lib/types";
 import toast from "react-hot-toast";
+import LessonPlanModal from "@/components/schedule/LessonPlanModal";
 import { Modal } from "@/components/ui/Modal";
 
 type ViewType = "week" | "month";
@@ -28,6 +29,11 @@ export default function SchedulePage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Lesson Plan Modal state
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
+  const [showLessonPlanModal, setShowLessonPlanModal] = useState(false);
 
   // Calculate date range based on view type
   const getDateRange = () => {
@@ -139,6 +145,38 @@ export default function SchedulePage() {
   const getStudentName = (studentId: string) => {
     const student = students.find((s) => s.student_id === studentId);
     return student?.name || studentId;
+  };
+
+  const getStudent = (studentId: string) => {
+    return students.find((s) => s.student_id === studentId);
+  };
+
+  const handleSessionClick = async (session: Session) => {
+    setSelectedSession(session);
+
+    // If session has a lesson plan, fetch it
+    if (session.lesson_plan_id) {
+      try {
+        const response = await fetch(`/api/lessons/${session.lesson_plan_id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSelectedLessonPlan(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching lesson plan:", error);
+      }
+    } else {
+      setSelectedLessonPlan(null);
+    }
+
+    setShowLessonPlanModal(true);
+  };
+
+  const handleLessonPlanSuccess = () => {
+    setShowLessonPlanModal(false);
+    setSelectedSession(null);
+    setSelectedLessonPlan(null);
+    fetchSessions(); // Refresh sessions to update lesson_plan_id
   };
 
   return (
@@ -274,6 +312,7 @@ export default function SchedulePage() {
                         key={session.session_id}
                         session={session}
                         studentName={getStudentName(session.student_id)}
+                        onClick={() => handleSessionClick(session)}
                       />
                     ))}
                   </div>
@@ -296,6 +335,21 @@ export default function SchedulePage() {
           }}
         />
       )}
+
+      {/* Lesson Plan Modal */}
+      {showLessonPlanModal && selectedSession && (
+        <LessonPlanModal
+          session={selectedSession}
+          student={getStudent(selectedSession.student_id)!}
+          existingPlan={selectedLessonPlan || undefined}
+          onClose={() => {
+            setShowLessonPlanModal(false);
+            setSelectedSession(null);
+            setSelectedLessonPlan(null);
+          }}
+          onSuccess={handleLessonPlanSuccess}
+        />
+      )}
     </div>
   );
 }
@@ -304,19 +358,18 @@ export default function SchedulePage() {
 function SessionCard({
   session,
   studentName,
+  onClick,
 }: {
   session: Session;
   studentName: string;
+  onClick: () => void;
 }) {
   const hasLessonPlan = !!session.lesson_plan_id;
 
   return (
     <div
       className="p-2 bg-white border border-gray-200 rounded cursor-pointer hover:shadow-md transition-shadow text-xs"
-      onClick={() => {
-        // TODO: Open lesson plan modal
-        toast.error("Lesson plan modal not yet implemented");
-      }}
+      onClick={onClick}
     >
       <div className="flex items-start justify-between gap-1">
         <div className="flex-1 min-w-0">

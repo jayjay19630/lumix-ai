@@ -251,11 +251,11 @@ export async function queryQuestions(
 
 // ============ Lesson Plan Operations ============
 
-export async function getLessonPlan(lessonId: string): Promise<LessonPlan | null> {
+export async function getLessonPlan(lessonPlanId: string): Promise<LessonPlan | null> {
   try {
     const command = new GetCommand({
       TableName: TABLES.LESSONS,
-      Key: { lesson_id: lessonId },
+      Key: { lesson_plan_id: lessonPlanId },
     });
     const response = await docClient.send(command);
     return (response.Item as LessonPlan) || null;
@@ -265,11 +265,30 @@ export async function getLessonPlan(lessonId: string): Promise<LessonPlan | null
   }
 }
 
+export async function getLessonPlanBySession(sessionId: string): Promise<LessonPlan | null> {
+  try {
+    const command = new QueryCommand({
+      TableName: TABLES.LESSONS,
+      IndexName: "SessionIndex",
+      KeyConditionExpression: "session_id = :session_id",
+      ExpressionAttributeValues: {
+        ":session_id": sessionId,
+      },
+    });
+    const response = await docClient.send(command);
+    return (response.Items?.[0] as LessonPlan) || null;
+  } catch (error) {
+    console.error("Error getting lesson plan by session:", error);
+    throw error;
+  }
+}
+
 export async function getLessonPlansByStudent(studentId: string): Promise<LessonPlan[]> {
   try {
-    const command = new ScanCommand({
+    const command = new QueryCommand({
       TableName: TABLES.LESSONS,
-      FilterExpression: "student_id = :student_id",
+      IndexName: "StudentIndex",
+      KeyConditionExpression: "student_id = :student_id",
       ExpressionAttributeValues: {
         ":student_id": studentId,
       },
@@ -278,6 +297,19 @@ export async function getLessonPlansByStudent(studentId: string): Promise<Lesson
     return (response.Items as LessonPlan[]) || [];
   } catch (error) {
     console.error("Error getting lesson plans by student:", error);
+    throw error;
+  }
+}
+
+export async function getAllLessonPlans(): Promise<LessonPlan[]> {
+  try {
+    const command = new ScanCommand({
+      TableName: TABLES.LESSONS,
+    });
+    const response = await docClient.send(command);
+    return (response.Items as LessonPlan[]) || [];
+  } catch (error) {
+    console.error("Error getting all lesson plans:", error);
     throw error;
   }
 }
@@ -292,6 +324,60 @@ export async function createLessonPlan(lessonPlan: LessonPlan): Promise<LessonPl
     return lessonPlan;
   } catch (error) {
     console.error("Error creating lesson plan:", error);
+    throw error;
+  }
+}
+
+export async function updateLessonPlan(
+  lessonPlanId: string,
+  updates: Partial<LessonPlan>
+): Promise<LessonPlan> {
+  try {
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, unknown> = {};
+
+    Object.entries(updates).forEach(([key, value], index) => {
+      if (key !== "lesson_plan_id") {
+        const placeholder = `#field${index}`;
+        const valuePlaceholder = `:value${index}`;
+        updateExpressions.push(`${placeholder} = ${valuePlaceholder}`);
+        expressionAttributeNames[placeholder] = key;
+        expressionAttributeValues[valuePlaceholder] = value;
+      }
+    });
+
+    // Always update updated_at
+    updateExpressions.push("#updatedAt = :updatedAt");
+    expressionAttributeNames["#updatedAt"] = "updated_at";
+    expressionAttributeValues[":updatedAt"] = new Date().toISOString();
+
+    const command = new UpdateCommand({
+      TableName: TABLES.LESSONS,
+      Key: { lesson_plan_id: lessonPlanId },
+      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    });
+
+    const response = await docClient.send(command);
+    return response.Attributes as LessonPlan;
+  } catch (error) {
+    console.error("Error updating lesson plan:", error);
+    throw error;
+  }
+}
+
+export async function deleteLessonPlan(lessonPlanId: string): Promise<void> {
+  try {
+    const command = new DeleteCommand({
+      TableName: TABLES.LESSONS,
+      Key: { lesson_plan_id: lessonPlanId },
+    });
+    await docClient.send(command);
+  } catch (error) {
+    console.error("Error deleting lesson plan:", error);
     throw error;
   }
 }
