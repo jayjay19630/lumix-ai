@@ -58,7 +58,7 @@ export default function LessonPlanModal({
 
   const fetchWorksheets = async () => {
     try {
-      const response = await fetch(`/api/worksheets?student_id=${student.student_id}`);
+      const response = await fetch("/api/worksheets");
       if (!response.ok) throw new Error("Failed to fetch worksheets");
       const data = await response.json();
       setWorksheets(data.data || []);

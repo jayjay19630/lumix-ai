@@ -168,16 +168,8 @@ async function createAllTables(): Promise<void> {
     KeySchema: [{ AttributeName: "worksheet_id", KeyType: "HASH" }],
     AttributeDefinitions: [
       { AttributeName: "worksheet_id", AttributeType: "S" },
-      { AttributeName: "student_id", AttributeType: "S" },
     ],
     BillingMode: "PAY_PER_REQUEST",
-    GlobalSecondaryIndexes: [
-      {
-        IndexName: "StudentIndex",
-        KeySchema: [{ AttributeName: "student_id", KeyType: "HASH" }],
-        Projection: { ProjectionType: "ALL" },
-      },
-    ],
   });
 
   // Sessions Table (individual scheduled sessions)

@@ -169,8 +169,6 @@ export interface QuestionResult {
 export interface Worksheet {
   worksheet_id: string;
   title: string;
-  student_id?: string;
-  student_name?: string;
   topics: string[];
   difficulty: ("Easy" | "Medium" | "Hard")[];
   question_count: number;
