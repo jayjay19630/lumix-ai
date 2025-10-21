@@ -75,9 +75,6 @@ npm install
 cp .env.local.example .env.local
 # Edit .env.local with your AWS credentials
 
-# Add AI service URL
-echo "AI_SERVICE_URL=http://localhost:8000" >> .env.local
-
 # Start development server
 npm run dev
 ```
