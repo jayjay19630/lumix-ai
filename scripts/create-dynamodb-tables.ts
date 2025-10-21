@@ -105,16 +105,22 @@ async function createAllTables(): Promise<void> {
   // Lesson Plans Table
   await createTable({
     TableName: process.env.DYNAMODB_LESSONS_TABLE || "lumix-lesson-plans",
-    KeySchema: [{ AttributeName: "lesson_id", KeyType: "HASH" }],
+    KeySchema: [{ AttributeName: "lesson_plan_id", KeyType: "HASH" }],
     AttributeDefinitions: [
-      { AttributeName: "lesson_id", AttributeType: "S" },
+      { AttributeName: "lesson_plan_id", AttributeType: "S" },
       { AttributeName: "student_id", AttributeType: "S" },
+      { AttributeName: "session_id", AttributeType: "S" },
     ],
     BillingMode: "PAY_PER_REQUEST",
     GlobalSecondaryIndexes: [
       {
         IndexName: "StudentIndex",
         KeySchema: [{ AttributeName: "student_id", KeyType: "HASH" }],
+        Projection: { ProjectionType: "ALL" },
+      },
+      {
+        IndexName: "SessionIndex",
+        KeySchema: [{ AttributeName: "session_id", KeyType: "HASH" }],
         Projection: { ProjectionType: "ALL" },
       },
     ],
