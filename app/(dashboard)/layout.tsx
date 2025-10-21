@@ -23,7 +23,7 @@ export default function DashboardLayout({
       <AIAgent />
 
       {/* Toast notifications */}
-      <Toaster position='bottom-center' />
+      <Toaster position="bottom-center" />
     </div>
   );
 }

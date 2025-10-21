@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, BookOpen, Calendar, FileText, Sparkles } from "lucide-react";
+import {
+  Home,
+  Users,
+  BookOpen,
+  Calendar,
+  FileText,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -41,7 +48,7 @@ export function Sidebar() {
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-indigo-50 text-indigo-600"
-                  : "text-gray-700 hover:bg-gray-100"
+                  : "text-gray-700 hover:bg-gray-100",
               )}
             >
               <Icon className="h-5 w-5" />

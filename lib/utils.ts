@@ -12,7 +12,10 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Formats a date string to a readable format
  */
-export function formatDate(date: string | Date, formatStr: string = "MMM d, yyyy"): string {
+export function formatDate(
+  date: string | Date,
+  formatStr: string = "MMM d, yyyy",
+): string {
   try {
     const dateObj = typeof date === "string" ? new Date(date) : date;
     return format(dateObj, formatStr);
@@ -41,7 +44,11 @@ export function formatTime(time: string): string {
 /**
  * Calculate percentage and format it
  */
-export function formatPercentage(value: number, total: number, decimals: number = 0): string {
+export function formatPercentage(
+  value: number,
+  total: number,
+  decimals: number = 0,
+): string {
   if (total === 0) return "0%";
   const percentage = (value / total) * 100;
   return `${percentage.toFixed(decimals)}%`;

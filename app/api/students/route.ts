@@ -15,7 +15,7 @@ export async function GET() {
     console.error("Error fetching students:", error);
     return NextResponse.json(
       { error: "Failed to fetch students" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!name || !grade) {
       return NextResponse.json(
         { error: "Name and grade are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,13 +55,13 @@ export async function POST(request: NextRequest) {
         student: savedStudent,
         message: "Student created successfully",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating student:", error);
     return NextResponse.json(
       { error: "Failed to create student" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

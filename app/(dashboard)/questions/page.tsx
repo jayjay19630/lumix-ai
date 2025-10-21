@@ -72,7 +72,9 @@ export default function QuestionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [topicFilter, setTopicFilter] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("");
@@ -116,9 +118,12 @@ export default function QuestionsPage() {
 
   // Filter questions
   const filteredQuestions = questions.filter((q) => {
-    const matchesSearch = q.text.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = q.text
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const matchesTopic = !topicFilter || q.topic === topicFilter;
-    const matchesDifficulty = !difficultyFilter || q.difficulty === difficultyFilter;
+    const matchesDifficulty =
+      !difficultyFilter || q.difficulty === difficultyFilter;
     return matchesSearch && matchesTopic && matchesDifficulty;
   });
 
@@ -139,7 +144,6 @@ export default function QuestionsPage() {
             <Upload className="h-4 w-4 mr-2" />
             Upload Paper
           </Button>
-
         </div>
       </div>
 
@@ -213,16 +217,22 @@ export default function QuestionsPage() {
                       <span
                         className={cn(
                           "px-2 py-1 rounded text-xs font-medium",
-                          getDifficultyColor(question.difficulty)
+                          getDifficultyColor(question.difficulty),
                         )}
                       >
                         {question.difficulty}
                       </span>
-                      <span className="text-xs text-gray-500">{question.topic}</span>
+                      <span className="text-xs text-gray-500">
+                        {question.topic}
+                      </span>
                       <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500">{question.source}</span>
+                      <span className="text-xs text-gray-500">
+                        {question.source}
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-900 font-medium">{question.text}</p>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {question.text}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <div className="text-xs text-gray-500">

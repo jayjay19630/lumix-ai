@@ -12,7 +12,11 @@ const stats = {
 const recentActivity = [
   { id: 1, action: "Added new student: Alice Johnson", time: "2 hours ago" },
   { id: 2, action: "Generated lesson plan for Bob Smith", time: "5 hours ago" },
-  { id: 3, action: "Uploaded 15 new questions from past paper", time: "1 day ago" },
+  {
+    id: 3,
+    action: "Uploaded 15 new questions from past paper",
+    time: "1 day ago",
+  },
   { id: 4, action: "Graded worksheet for Charlie Brown", time: "2 days ago" },
 ];
 
@@ -37,7 +41,9 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.total_students}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stats.total_students}
+            </div>
             <p className="text-xs text-gray-500 mt-1">Active students</p>
           </CardContent>
         </Card>
@@ -50,7 +56,9 @@ export default function DashboardPage() {
             <BookOpen className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.total_questions}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stats.total_questions}
+            </div>
             <p className="text-xs text-gray-500 mt-1">Questions available</p>
           </CardContent>
         </Card>
@@ -63,7 +71,9 @@ export default function DashboardPage() {
             <Calendar className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats.upcoming_sessions}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {stats.upcoming_sessions}
+            </div>
             <p className="text-xs text-gray-500 mt-1">This week</p>
           </CardContent>
         </Card>
@@ -96,7 +106,9 @@ export default function DashboardPage() {
                 <div className="w-2 h-2 bg-indigo-600 rounded-full mt-2" />
                 <div className="flex-1">
                   <p className="text-sm text-gray-900">{activity.action}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{activity.time}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {activity.time}
+                  </p>
                 </div>
               </div>
             ))}

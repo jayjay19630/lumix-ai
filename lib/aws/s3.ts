@@ -27,7 +27,7 @@ export async function uploadFileToS3(
   fileBuffer: Buffer,
   fileName: string,
   contentType: string,
-  folder: string = "uploads"
+  folder: string = "uploads",
 ): Promise<string> {
   try {
     const key = `${folder}/${Date.now()}-${fileName}`;
@@ -58,7 +58,7 @@ export async function uploadFileToS3(
 export async function uploadToS3(
   fileBuffer: Uint8Array | Buffer,
   key: string,
-  contentType: string
+  contentType: string,
 ): Promise<string> {
   try {
     const input: PutObjectCommandInput = {
@@ -87,7 +87,7 @@ export async function generatePresignedUploadUrl(
   fileName: string,
   contentType: string,
   folder: string = "uploads",
-  expiresIn: number = 3600
+  expiresIn: number = 3600,
 ): Promise<{ uploadUrl: string; fileUrl: string; key: string }> {
   try {
     const key = `${folder}/${Date.now()}-${fileName}`;
@@ -118,7 +118,7 @@ export async function generatePresignedUploadUrl(
  */
 export async function generatePresignedDownloadUrl(
   key: string,
-  expiresIn: number = 3600
+  expiresIn: number = 3600,
 ): Promise<string> {
   try {
     const command = new GetObjectCommand({
@@ -186,13 +186,13 @@ export async function deleteFileFromS3(key: string): Promise<void> {
  */
 export async function uploadWorksheet(
   pdfBuffer: Buffer,
-  lessonId: string
+  lessonId: string,
 ): Promise<string> {
   return uploadFileToS3(
     pdfBuffer,
     `worksheet-${lessonId}.pdf`,
     "application/pdf",
-    "worksheets"
+    "worksheets",
   );
 }
 
@@ -202,13 +202,13 @@ export async function uploadWorksheet(
 export async function uploadGradedWorksheet(
   fileBuffer: Buffer,
   sessionId: string,
-  fileName: string
+  fileName: string,
 ): Promise<string> {
   return uploadFileToS3(
     fileBuffer,
     `graded-${sessionId}-${fileName}`,
     "application/pdf",
-    "graded-worksheets"
+    "graded-worksheets",
   );
 }
 
@@ -218,14 +218,14 @@ export async function uploadGradedWorksheet(
 export async function uploadQuestionImage(
   imageBuffer: Buffer,
   questionId: string,
-  contentType: string
+  contentType: string,
 ): Promise<string> {
   const extension = contentType.split("/")[1] || "jpg";
   return uploadFileToS3(
     imageBuffer,
     `question-${questionId}.${extension}`,
     contentType,
-    "question-images"
+    "question-images",
   );
 }
 

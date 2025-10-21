@@ -128,7 +128,8 @@ async function createAllTables(): Promise<void> {
 
   // Grade History Table
   await createTable({
-    TableName: process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
+    TableName:
+      process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
     KeySchema: [{ AttributeName: "grade_history_id", KeyType: "HASH" }],
     AttributeDefinitions: [
       { AttributeName: "grade_history_id", AttributeType: "S" },
@@ -146,7 +147,8 @@ async function createAllTables(): Promise<void> {
 
   // Session Schedules Table (Recurring schedules)
   await createTable({
-    TableName: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
+    TableName:
+      process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
     KeySchema: [{ AttributeName: "schedule_id", KeyType: "HASH" }],
     AttributeDefinitions: [
       { AttributeName: "schedule_id", AttributeType: "S" },

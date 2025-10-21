@@ -11,7 +11,8 @@ export function AIAgent() {
     {
       id: "1",
       role: "assistant",
-      content: "Hello! I'm your AI teaching assistant. How can I help you today?",
+      content:
+        "Hello! I'm your AI teaching assistant. How can I help you today?",
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -103,7 +104,7 @@ export function AIAgent() {
             key={message.id}
             className={cn(
               "flex",
-              message.role === "user" ? "justify-end" : "justify-start"
+              message.role === "user" ? "justify-end" : "justify-start",
             )}
           >
             <div
@@ -111,7 +112,7 @@ export function AIAgent() {
                 "max-w-[85%] rounded-lg px-4 py-2 text-sm",
                 message.role === "user"
                   ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-900"
+                  : "bg-gray-100 text-gray-900",
               )}
             >
               {message.content}

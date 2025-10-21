@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching sessions:", error);
     return NextResponse.json(
       { error: "Failed to fetch sessions" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (!student_id || !date || !time || !duration) {
       return NextResponse.json(
         { error: "Missing required fields: student_id, date, time, duration" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating session:", error);
     return NextResponse.json(
       { error: "Failed to create session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -107,7 +107,7 @@ export async function DELETE(request: NextRequest) {
     if (!sessionId) {
       return NextResponse.json(
         { error: "Session ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -120,7 +120,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting session:", error);
     return NextResponse.json(
       { error: "Failed to delete session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

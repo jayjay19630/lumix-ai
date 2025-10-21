@@ -9,17 +9,14 @@ import {
 // GET /api/students/[id] - Get student by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const student = await getStudent(id);
 
     if (!student) {
-      return NextResponse.json(
-        { error: "Student not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
     // Also fetch grade history
@@ -33,7 +30,7 @@ export async function GET(
     console.error("Error fetching student:", error);
     return NextResponse.json(
       { error: "Failed to fetch student" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -41,7 +38,7 @@ export async function GET(
 // PATCH /api/students/[id] - Update student
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -63,7 +60,7 @@ export async function PATCH(
     console.error("Error updating student:", error);
     return NextResponse.json(
       { error: "Failed to update student" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -71,7 +68,7 @@ export async function PATCH(
 // DELETE /api/students/[id] - Delete student
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
@@ -84,7 +81,7 @@ export async function DELETE(
     console.error("Error deleting student:", error);
     return NextResponse.json(
       { error: "Failed to delete student" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

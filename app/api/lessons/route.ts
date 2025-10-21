@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching lesson plans:", error);
     return NextResponse.json(
       { error: "Failed to fetch lesson plans" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           error:
             "session_id, student_id, date, duration, and teaching_notes are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     console.error("Error creating lesson plan:", error);
     return NextResponse.json(
       { error: "Failed to create lesson plan" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -10,7 +10,15 @@ import {
   ScanCommandInput,
   QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
-import type { Student, Question, LessonPlan, GradeHistory, RecurringSessionSchedule, Worksheet, Session } from "../types";
+import type {
+  Student,
+  Question,
+  LessonPlan,
+  GradeHistory,
+  RecurringSessionSchedule,
+  Worksheet,
+  Session,
+} from "../types";
 
 // Initialize DynamoDB Client
 const dynamoClient = new DynamoDBClient({
@@ -34,8 +42,10 @@ const TABLES = {
   STUDENTS: process.env.DYNAMODB_STUDENTS_TABLE || "lumix-students",
   QUESTIONS: process.env.DYNAMODB_QUESTIONS_TABLE || "lumix-questions",
   LESSONS: process.env.DYNAMODB_LESSONS_TABLE || "lumix-lesson-plans",
-  GRADE_HISTORY: process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
-  SESSION_SCHEDULES: process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
+  GRADE_HISTORY:
+    process.env.DYNAMODB_GRADE_HISTORY_TABLE || "lumix-grade-history",
+  SESSION_SCHEDULES:
+    process.env.DYNAMODB_SESSION_SCHEDULES_TABLE || "lumix-session-schedules",
   WORKSHEETS: process.env.DYNAMODB_WORKSHEETS_TABLE || "lumix-worksheets",
   SESSIONS: process.env.DYNAMODB_SESSIONS_TABLE || "lumix-sessions",
 };
@@ -85,7 +95,7 @@ export async function createStudent(student: Student): Promise<Student> {
 
 export async function updateStudent(
   studentId: string,
-  updates: Partial<Student>
+  updates: Partial<Student>,
 ): Promise<Student> {
   try {
     const updateExpressions: string[] = [];
@@ -132,7 +142,9 @@ export async function deleteStudent(studentId: string): Promise<void> {
 
 // ============ Question Operations ============
 
-export async function getQuestion(questionId: string): Promise<Question | null> {
+export async function getQuestion(
+  questionId: string,
+): Promise<Question | null> {
   try {
     const command = new GetCommand({
       TableName: TABLES.QUESTIONS,
@@ -192,7 +204,7 @@ export async function createQuestion(question: Question): Promise<Question> {
 
 export async function updateQuestion(
   questionId: string,
-  updates: Partial<Question>
+  updates: Partial<Question>,
 ): Promise<Question> {
   try {
     const updateExpressions: string[] = [];
@@ -224,12 +236,10 @@ export async function updateQuestion(
   }
 }
 
-export async function queryQuestions(
-  filters?: {
-    topics?: string[];
-    difficulties?: ("Easy" | "Medium" | "Hard")[];
-  }
-): Promise<Question[]> {
+export async function queryQuestions(filters?: {
+  topics?: string[];
+  difficulties?: ("Easy" | "Medium" | "Hard")[];
+}): Promise<Question[]> {
   try {
     // Use getAllQuestions and filter if needed
     const allQuestions = await getAllQuestions();
@@ -240,7 +250,8 @@ export async function queryQuestions(
 
     return allQuestions.filter((q) => {
       const topicMatch = !filters.topics || filters.topics.includes(q.topic);
-      const difficultyMatch = !filters.difficulties || filters.difficulties.includes(q.difficulty);
+      const difficultyMatch =
+        !filters.difficulties || filters.difficulties.includes(q.difficulty);
       return topicMatch && difficultyMatch;
     });
   } catch (error) {
@@ -251,7 +262,9 @@ export async function queryQuestions(
 
 // ============ Lesson Plan Operations ============
 
-export async function getLessonPlan(lessonPlanId: string): Promise<LessonPlan | null> {
+export async function getLessonPlan(
+  lessonPlanId: string,
+): Promise<LessonPlan | null> {
   try {
     const command = new GetCommand({
       TableName: TABLES.LESSONS,
@@ -265,7 +278,9 @@ export async function getLessonPlan(lessonPlanId: string): Promise<LessonPlan | 
   }
 }
 
-export async function getLessonPlanBySession(sessionId: string): Promise<LessonPlan | null> {
+export async function getLessonPlanBySession(
+  sessionId: string,
+): Promise<LessonPlan | null> {
   try {
     const command = new QueryCommand({
       TableName: TABLES.LESSONS,
@@ -283,7 +298,9 @@ export async function getLessonPlanBySession(sessionId: string): Promise<LessonP
   }
 }
 
-export async function getLessonPlansByStudent(studentId: string): Promise<LessonPlan[]> {
+export async function getLessonPlansByStudent(
+  studentId: string,
+): Promise<LessonPlan[]> {
   try {
     const command = new QueryCommand({
       TableName: TABLES.LESSONS,
@@ -314,7 +331,9 @@ export async function getAllLessonPlans(): Promise<LessonPlan[]> {
   }
 }
 
-export async function createLessonPlan(lessonPlan: LessonPlan): Promise<LessonPlan> {
+export async function createLessonPlan(
+  lessonPlan: LessonPlan,
+): Promise<LessonPlan> {
   try {
     const command = new PutCommand({
       TableName: TABLES.LESSONS,
@@ -330,7 +349,7 @@ export async function createLessonPlan(lessonPlan: LessonPlan): Promise<LessonPl
 
 export async function updateLessonPlan(
   lessonPlanId: string,
-  updates: Partial<LessonPlan>
+  updates: Partial<LessonPlan>,
 ): Promise<LessonPlan> {
   try {
     const updateExpressions: string[] = [];
@@ -384,7 +403,9 @@ export async function deleteLessonPlan(lessonPlanId: string): Promise<void> {
 
 // ============ Grade History Operations ============
 
-export async function getGradeHistory(gradeHistoryId: string): Promise<GradeHistory | null> {
+export async function getGradeHistory(
+  gradeHistoryId: string,
+): Promise<GradeHistory | null> {
   try {
     const command = new GetCommand({
       TableName: TABLES.GRADE_HISTORY,
@@ -398,7 +419,9 @@ export async function getGradeHistory(gradeHistoryId: string): Promise<GradeHist
   }
 }
 
-export async function getGradeHistoryByStudent(studentId: string): Promise<GradeHistory[]> {
+export async function getGradeHistoryByStudent(
+  studentId: string,
+): Promise<GradeHistory[]> {
   try {
     const command = new ScanCommand({
       TableName: TABLES.GRADE_HISTORY,
@@ -415,7 +438,9 @@ export async function getGradeHistoryByStudent(studentId: string): Promise<Grade
   }
 }
 
-export async function createGradeHistory(gradeHistory: GradeHistory): Promise<GradeHistory> {
+export async function createGradeHistory(
+  gradeHistory: GradeHistory,
+): Promise<GradeHistory> {
   try {
     const command = new PutCommand({
       TableName: TABLES.GRADE_HISTORY,
@@ -431,7 +456,9 @@ export async function createGradeHistory(gradeHistory: GradeHistory): Promise<Gr
 
 // ============ Session Schedule Operations ============
 
-export async function getSessionSchedule(scheduleId: string): Promise<RecurringSessionSchedule | null> {
+export async function getSessionSchedule(
+  scheduleId: string,
+): Promise<RecurringSessionSchedule | null> {
   try {
     const command = new GetCommand({
       TableName: TABLES.SESSION_SCHEDULES,
@@ -445,7 +472,9 @@ export async function getSessionSchedule(scheduleId: string): Promise<RecurringS
   }
 }
 
-export async function getSessionSchedulesByStudent(studentId: string): Promise<RecurringSessionSchedule[]> {
+export async function getSessionSchedulesByStudent(
+  studentId: string,
+): Promise<RecurringSessionSchedule[]> {
   try {
     const command = new QueryCommand({
       TableName: TABLES.SESSION_SCHEDULES,
@@ -463,7 +492,9 @@ export async function getSessionSchedulesByStudent(studentId: string): Promise<R
   }
 }
 
-export async function getAllSessionSchedules(): Promise<RecurringSessionSchedule[]> {
+export async function getAllSessionSchedules(): Promise<
+  RecurringSessionSchedule[]
+> {
   try {
     const command = new ScanCommand({
       TableName: TABLES.SESSION_SCHEDULES,
@@ -476,7 +507,9 @@ export async function getAllSessionSchedules(): Promise<RecurringSessionSchedule
   }
 }
 
-export async function createSessionSchedule(schedule: RecurringSessionSchedule): Promise<RecurringSessionSchedule> {
+export async function createSessionSchedule(
+  schedule: RecurringSessionSchedule,
+): Promise<RecurringSessionSchedule> {
   try {
     const command = new PutCommand({
       TableName: TABLES.SESSION_SCHEDULES,
@@ -492,7 +525,7 @@ export async function createSessionSchedule(schedule: RecurringSessionSchedule):
 
 export async function updateSessionSchedule(
   scheduleId: string,
-  updates: Partial<RecurringSessionSchedule>
+  updates: Partial<RecurringSessionSchedule>,
 ): Promise<RecurringSessionSchedule> {
   try {
     const updateExpressions: string[] = [];
@@ -539,7 +572,9 @@ export async function deleteSessionSchedule(scheduleId: string): Promise<void> {
 
 // ============ Worksheet Operations ============
 
-export async function getWorksheet(worksheetId: string): Promise<Worksheet | null> {
+export async function getWorksheet(
+  worksheetId: string,
+): Promise<Worksheet | null> {
   try {
     const command = new GetCommand({
       TableName: TABLES.WORKSHEETS,
@@ -566,7 +601,9 @@ export async function getAllWorksheets(): Promise<Worksheet[]> {
   }
 }
 
-export async function getWorksheetsByStudent(studentId: string): Promise<Worksheet[]> {
+export async function getWorksheetsByStudent(
+  studentId: string,
+): Promise<Worksheet[]> {
   try {
     const command = new QueryCommand({
       TableName: TABLES.WORKSHEETS,
@@ -584,7 +621,9 @@ export async function getWorksheetsByStudent(studentId: string): Promise<Workshe
   }
 }
 
-export async function createWorksheet(worksheet: Worksheet): Promise<Worksheet> {
+export async function createWorksheet(
+  worksheet: Worksheet,
+): Promise<Worksheet> {
   try {
     const command = new PutCommand({
       TableName: TABLES.WORKSHEETS,
@@ -640,7 +679,9 @@ export async function getAllSessions(): Promise<Session[]> {
   }
 }
 
-export async function getSessionsByStudent(studentId: string): Promise<Session[]> {
+export async function getSessionsByStudent(
+  studentId: string,
+): Promise<Session[]> {
   try {
     const command = new QueryCommand({
       TableName: TABLES.SESSIONS,
@@ -658,7 +699,10 @@ export async function getSessionsByStudent(studentId: string): Promise<Session[]
   }
 }
 
-export async function getSessionsByDateRange(startDate: string, endDate: string): Promise<Session[]> {
+export async function getSessionsByDateRange(
+  startDate: string,
+  endDate: string,
+): Promise<Session[]> {
   try {
     const command = new ScanCommand({
       TableName: TABLES.SESSIONS,
@@ -695,7 +739,7 @@ export async function createSession(session: Session): Promise<Session> {
 
 export async function updateSession(
   sessionId: string,
-  updates: Partial<Session>
+  updates: Partial<Session>,
 ): Promise<Session> {
   try {
     const updateExpressions: string[] = [];

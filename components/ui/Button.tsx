@@ -7,11 +7,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500",
-        secondary: "bg-gray-200 text-gray-900 hover:bg-gray-300 focus-visible:ring-gray-500",
-        outline: "border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 focus-visible:ring-indigo-500",
+        primary:
+          "bg-indigo-600 text-white hover:bg-indigo-700 focus-visible:ring-indigo-500",
+        secondary:
+          "bg-gray-200 text-gray-900 hover:bg-gray-300 focus-visible:ring-gray-500",
+        outline:
+          "border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 focus-visible:ring-indigo-500",
         ghost: "text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500",
-        danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
+        danger:
+          "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
       },
       size: {
         sm: "px-3 py-1.5 text-sm",
@@ -24,7 +28,7 @@ const buttonVariants = cva(
       variant: "primary",
       size: "md",
     },
-  }
+  },
 );
 
 export interface ButtonProps
@@ -40,7 +44,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       />
     );
-  }
+  },
 );
 
 Button.displayName = "Button";

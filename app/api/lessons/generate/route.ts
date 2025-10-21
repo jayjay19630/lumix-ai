@@ -24,24 +24,21 @@ export async function POST(request: NextRequest) {
     if (!session_id || !topic) {
       return NextResponse.json(
         { error: "session_id and topic are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Get session data
     const session = await getSession(session_id);
     if (!session) {
-      return NextResponse.json(
-        { error: "Session not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
     // Simple AI generation for now
     const teachingNotes = await generateSimpleLessonPlan(
       topic,
       session.duration,
-      session.student_id
+      session.student_id,
     );
 
     // Create lesson plan record
@@ -77,7 +74,7 @@ export async function POST(request: NextRequest) {
     console.error("Error generating lesson plan:", error);
     return NextResponse.json(
       { error: "Failed to generate lesson plan" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -85,7 +82,7 @@ export async function POST(request: NextRequest) {
 async function generateSimpleLessonPlan(
   topic: string,
   duration: number,
-  studentId: string
+  studentId: string,
 ): Promise<string> {
   try {
     const prompt = `Create a ${duration}-minute tutoring lesson plan on ${topic}.

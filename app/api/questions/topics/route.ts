@@ -25,7 +25,7 @@ export async function GET() {
     console.error("Error fetching topics:", error);
     return NextResponse.json(
       { error: "Failed to fetch topics" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

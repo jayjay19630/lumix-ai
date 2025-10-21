@@ -63,6 +63,7 @@ npx tsx scripts/create-dynamodb-tables.ts
 ```
 
 This will create the following tables:
+
 - `lumix-students`: Student profiles and performance data
 - `lumix-questions`: Question bank with metadata
 - `lumix-lesson-plans`: Generated lesson plans
@@ -89,7 +90,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the a
 ## Troubleshooting
 
 ### Node Version Error
+
 If you see "Node.js version required" error, upgrade Node.js:
+
 ```bash
 # Using nvm
 nvm install 20

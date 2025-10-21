@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     if (!pdfBlob || !title || !topicsStr || !difficultyStr || !questionsStr) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     console.error("Error saving worksheet:", error);
     return NextResponse.json(
       { error: "Failed to save worksheet" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

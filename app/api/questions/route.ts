@@ -19,11 +19,9 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch questions",
+          error instanceof Error ? error.message : "Failed to fetch questions",
       } as ApiResponse,
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

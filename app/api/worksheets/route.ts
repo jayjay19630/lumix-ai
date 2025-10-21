@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAllWorksheets, getWorksheetsByStudent, deleteWorksheet } from "@/lib/aws/dynamodb";
+import {
+  getAllWorksheets,
+  getWorksheetsByStudent,
+  deleteWorksheet,
+} from "@/lib/aws/dynamodb";
 
 // GET /api/worksheets - Get all worksheets or by student
 export async function GET(request: NextRequest) {
@@ -15,8 +19,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Sort by created_at descending (most recent first)
-    worksheets.sort((a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    worksheets.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
 
     return NextResponse.json({
@@ -27,7 +32,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching worksheets:", error);
     return NextResponse.json(
       { error: "Failed to fetch worksheets" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -41,7 +46,7 @@ export async function DELETE(request: NextRequest) {
     if (!worksheetId) {
       return NextResponse.json(
         { error: "Worksheet ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,7 +59,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting worksheet:", error);
     return NextResponse.json(
       { error: "Failed to delete worksheet" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

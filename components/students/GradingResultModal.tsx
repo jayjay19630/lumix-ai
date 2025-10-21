@@ -21,9 +21,8 @@ export function GradingResultModal({
   date,
 }: GradingResultModalProps) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Grading Results" >
+    <Modal isOpen={isOpen} onClose={onClose} title="Grading Results">
       <div className="space-y-6">
-  
         {/* AI Insights */}
         {gradingResult.insights && (
           <Card>

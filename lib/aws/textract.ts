@@ -19,7 +19,7 @@ const textractClient = new TextractClient({
  * Extract text from document using AWS Textract
  */
 export async function extractTextFromDocument(
-  documentBytes: Uint8Array
+  documentBytes: Uint8Array,
 ): Promise<TextractResult> {
   try {
     const input: DetectDocumentTextCommandInput = {
@@ -34,7 +34,7 @@ export async function extractTextFromDocument(
     // Extract all text blocks
     const blocks = response.Blocks || [];
     const textBlocks = blocks.filter(
-      (block) => block.BlockType === "LINE" && block.Text
+      (block) => block.BlockType === "LINE" && block.Text,
     );
 
     // Combine all text
@@ -57,7 +57,9 @@ export async function extractTextFromDocument(
  * Parse individual questions from extracted text using AI
  * Handles unstructured text and complex question formats
  */
-async function parseQuestionsWithAI(text: string): Promise<ExtractedQuestion[]> {
+async function parseQuestionsWithAI(
+  text: string,
+): Promise<ExtractedQuestion[]> {
   // If text is empty or too short, return empty array
   if (!text || text.trim().length < 20) {
     return [];
@@ -104,18 +106,16 @@ Only return valid JSON, no additional text.`;
 
     // Validate the response structure
     if (Array.isArray(parsed)) {
-      return parsed.filter(
-        (q: unknown): q is ExtractedQuestion => {
-          const question = q as { text?: unknown; confidence?: unknown };
-          return (
-            question.text !== undefined &&
-            typeof question.text === "string" &&
-            question.text.length > 10 &&
-            question.confidence !== undefined &&
-            typeof question.confidence === "number"
-          );
-        }
-      );
+      return parsed.filter((q: unknown): q is ExtractedQuestion => {
+        const question = q as { text?: unknown; confidence?: unknown };
+        return (
+          question.text !== undefined &&
+          typeof question.text === "string" &&
+          question.text.length > 10 &&
+          question.confidence !== undefined &&
+          typeof question.confidence === "number"
+        );
+      });
     }
 
     console.warn("AI returned non-array response, falling back to regex");
@@ -135,7 +135,8 @@ function fallbackParseQuestions(text: string): ExtractedQuestion[] {
   const questions: ExtractedQuestion[] = [];
 
   // Split by common question patterns
-  const questionPattern = /(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))\s*(.+?)(?=(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))|$)/gi;
+  const questionPattern =
+    /(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))\s*(.+?)(?=(?:^|\n)(?:Q?\d+[\.\):]|\([a-z]\))|$)/gi;
   const matches = Array.from(text.matchAll(questionPattern));
 
   for (const match of matches) {
@@ -170,7 +171,7 @@ function fallbackParseQuestions(text: string): ExtractedQuestion[] {
  */
 export async function extractTextFromS3Document(
   bucket: string,
-  key: string
+  key: string,
 ): Promise<TextractResult> {
   try {
     const input: DetectDocumentTextCommandInput = {
@@ -187,7 +188,7 @@ export async function extractTextFromS3Document(
 
     const blocks = response.Blocks || [];
     const textBlocks = blocks.filter(
-      (block) => block.BlockType === "LINE" && block.Text
+      (block) => block.BlockType === "LINE" && block.Text,
     );
 
     const extractedText = textBlocks.map((block) => block.Text).join("\n");
@@ -207,7 +208,7 @@ export async function extractTextFromS3Document(
  * Extract answers from graded worksheet
  */
 export async function extractAnswersFromWorksheet(
-  documentBytes: Uint8Array
+  documentBytes: Uint8Array,
 ): Promise<{ answers: string[]; rawText: string }> {
   try {
     const result = await extractTextFromDocument(documentBytes);

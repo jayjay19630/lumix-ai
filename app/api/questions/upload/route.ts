@@ -13,19 +13,24 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "No file provided",
         } as ApiResponse,
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Validate file type
-    const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+    const validTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+    ];
     if (!validTypes.includes(file.type)) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid file type. Please upload PDF or image files.",
         } as ApiResponse,
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File size exceeds 10MB limit",
         } as ApiResponse,
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,7 +54,7 @@ export async function POST(request: NextRequest) {
       buffer,
       file.name,
       file.type,
-      "question-papers"
+      "question-papers",
     );
 
     return NextResponse.json({
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: error instanceof Error ? error.message : "Failed to upload file",
       } as ApiResponse,
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -4,7 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { UserPlus, TrendingUp, TrendingDown, Loader2, Users as UsersIcon } from "lucide-react";
+import {
+  UserPlus,
+  TrendingUp,
+  TrendingDown,
+  Loader2,
+  Users as UsersIcon,
+} from "lucide-react";
 import type { Student } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
 import toast from "react-hot-toast";
@@ -74,9 +80,9 @@ export default function StudentsPage() {
               No students yet
             </h3>
             <p className="text-gray-500 mb-6 max-w-md">
-              Get started by adding your first student. You&apos;ll be able to track
-              their progress, grade worksheets, and generate personalized lesson
-              plans.
+              Get started by adding your first student. You&apos;ll be able to
+              track their progress, grade worksheets, and generate personalized
+              lesson plans.
             </p>
             <Button onClick={() => setShowAddModal(true)}>
               <UserPlus className="h-4 w-4 mr-2" />

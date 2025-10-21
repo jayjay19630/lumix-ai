@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "File URL is required",
         } as ApiResponse,
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Extract text using Textract
     const textractResult = await extractTextFromDocument(
-      new Uint8Array(fileBuffer)
+      new Uint8Array(fileBuffer),
     );
 
     console.log(
-      `Extracted ${textractResult.questions.length} questions from document`
+      `Extracted ${textractResult.questions.length} questions from document`,
     );
 
     // Step 3: Process each question with AI
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         processedQuestions.push(question);
 
         console.log(
-          `Processed question: ${question.topic} (${question.difficulty})`
+          `Processed question: ${question.topic} (${question.difficulty})`,
         );
       } catch (error) {
         console.error("Error processing individual question:", error);
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         error:
           error instanceof Error ? error.message : "Failed to process document",
       } as ApiResponse,
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

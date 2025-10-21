@@ -20,7 +20,11 @@ import {
   Plus,
   Edit,
 } from "lucide-react";
-import type { Student, GradeHistory, RecurringSessionSchedule } from "@/lib/types";
+import type {
+  Student,
+  GradeHistory,
+  RecurringSessionSchedule,
+} from "@/lib/types";
 
 export default function StudentDetailPage({
   params,
@@ -34,9 +38,11 @@ export default function StudentDetailPage({
   const [schedules, setSchedules] = useState<RecurringSessionSchedule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedGradeHistory, setSelectedGradeHistory] = useState<GradeHistory | null>(null);
+  const [selectedGradeHistory, setSelectedGradeHistory] =
+    useState<GradeHistory | null>(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<RecurringSessionSchedule | null>(null);
+  const [editingSchedule, setEditingSchedule] =
+    useState<RecurringSessionSchedule | null>(null);
 
   useEffect(() => {
     fetchStudentData();
@@ -97,7 +103,15 @@ export default function StudentDetailPage({
   };
 
   const getDayName = (dayOfWeek: number) => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     return days[dayOfWeek];
   };
 
@@ -234,8 +248,8 @@ export default function StudentDetailPage({
                           score >= 80
                             ? "bg-green-600"
                             : score >= 60
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
                         }`}
                         style={{ width: `${score}%` }}
                       />
@@ -283,7 +297,8 @@ export default function StudentDetailPage({
                         <div className="flex items-center gap-3 mb-2">
                           <Clock className="h-5 w-5 text-indigo-600" />
                           <p className="font-medium text-gray-900">
-                            {getDayName(schedule.day_of_week)}s at {schedule.time}
+                            {getDayName(schedule.day_of_week)}s at{" "}
+                            {schedule.time}
                           </p>
                           {!schedule.is_active && (
                             <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs font-medium rounded">
@@ -341,7 +356,7 @@ export default function StudentDetailPage({
               {gradeHistory
                 .sort(
                   (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                    new Date(b.date).getTime() - new Date(a.date).getTime(),
                 )
                 .map((grade) => (
                   <div

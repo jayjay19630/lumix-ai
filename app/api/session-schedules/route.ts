@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         success: false,
         error: "Failed to fetch session schedules",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -47,16 +47,18 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { student_id, day_of_week, time, duration, focus_topics, is_active } = body;
+    const { student_id, day_of_week, time, duration, focus_topics, is_active } =
+      body;
 
     // Validate required fields
     if (!student_id || day_of_week === undefined || !time || !duration) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing required fields: student_id, day_of_week, time, duration",
+          error:
+            "Missing required fields: student_id, day_of_week, time, duration",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "day_of_week must be between 0 (Sunday) and 6 (Saturday)",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: "Failed to create session schedule",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

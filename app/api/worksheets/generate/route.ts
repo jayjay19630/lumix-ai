@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
     if (!criteria.topics || criteria.topics.length === 0) {
       return NextResponse.json(
         { error: "At least one topic is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!criteria.difficulty || criteria.difficulty.length === 0) {
       return NextResponse.json(
         { error: "At least one difficulty level is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     let filteredQuestions = allQuestions.filter(
       (q) =>
         criteria.topics.includes(q.topic) &&
-        criteria.difficulty.includes(q.difficulty)
+        criteria.difficulty.includes(q.difficulty),
     );
 
     if (filteredQuestions.length === 0) {
@@ -61,14 +61,14 @@ export async function POST(request: NextRequest) {
           error:
             "No questions found matching your criteria. Try adjusting your filters.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // Use AI to intelligently select questions
     const selectedQuestions = await selectQuestionsWithAI(
       filteredQuestions,
-      criteria
+      criteria,
     );
 
     // Format questions for PDF generation
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     console.error("Error generating worksheet:", error);
     return NextResponse.json(
       { error: "Failed to generate worksheet" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
  */
 async function selectQuestionsWithAI(
   questions: Question[],
-  criteria: WorksheetCriteria
+  criteria: WorksheetCriteria,
 ): Promise<Question[]> {
   try {
     // If we have fewer questions than requested, return all
@@ -181,7 +181,7 @@ Only return valid JSON, no additional text.`;
  */
 function selectQuestionsRandomly(
   questions: Question[],
-  count: number
+  count: number,
 ): Question[] {
   const shuffled = [...questions].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);

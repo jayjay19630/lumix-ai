@@ -12,7 +12,7 @@ import type { RecurringSessionSchedule } from "@/lib/types";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const schedule = await getSessionSchedule(params.id);
@@ -23,7 +23,7 @@ export async function GET(
           success: false,
           error: "Session schedule not found",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -38,7 +38,7 @@ export async function GET(
         success: false,
         error: "Failed to fetch session schedule",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -49,7 +49,7 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const body = await request.json();
@@ -63,7 +63,7 @@ export async function PATCH(
             success: false,
             error: "day_of_week must be between 0 (Sunday) and 6 (Saturday)",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
       updates.day_of_week = body.day_of_week;
@@ -88,7 +88,7 @@ export async function PATCH(
         success: false,
         error: "Failed to update session schedule",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -99,7 +99,7 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     await deleteSessionSchedule(params.id);
@@ -115,7 +115,7 @@ export async function DELETE(
         success: false,
         error: "Failed to delete session schedule",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

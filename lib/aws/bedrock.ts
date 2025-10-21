@@ -89,7 +89,7 @@ export async function invokeNovaModel({
  */
 export async function invokeBedrockAgent(
   prompt: string,
-  sessionId: string
+  sessionId: string,
 ): Promise<string> {
   try {
     const agentId = process.env.AWS_BEDROCK_AGENT_ID;
@@ -166,7 +166,9 @@ Only return valid JSON, no additional text.`;
 /**
  * Generate explanation for a question using Bedrock Nova
  */
-export async function generateQuestionExplanation(questionText: string): Promise<{
+export async function generateQuestionExplanation(
+  questionText: string,
+): Promise<{
   explanation: string;
   teaching_tips: string;
 }> {

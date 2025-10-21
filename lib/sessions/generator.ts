@@ -1,4 +1,8 @@
-import { getAllSessionSchedules, createSession, getSessionsByDateRange } from "../aws/dynamodb";
+import {
+  getAllSessionSchedules,
+  createSession,
+  getSessionsByDateRange,
+} from "../aws/dynamodb";
 import type { Session, RecurringSessionSchedule } from "../types";
 
 /**
@@ -15,7 +19,7 @@ export function generateSessionId(date: string, studentId: string): string {
 export function getDatesByDayOfWeek(
   startDate: Date,
   endDate: Date,
-  dayOfWeek: number
+  dayOfWeek: number,
 ): Date[] {
   const dates: Date[] = [];
   const current = new Date(startDate);
@@ -45,7 +49,7 @@ export function formatDate(date: Date): string {
  */
 export async function generateSessionsFromSchedules(
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<Session[]> {
   try {
     // Get all active session schedules
@@ -60,7 +64,7 @@ export async function generateSessionsFromSchedules(
     // Get existing sessions in the date range to avoid duplicates
     const existingSessions = await getSessionsByDateRange(startDate, endDate);
     const existingSessionIds = new Set(
-      existingSessions.map((s) => s.session_id)
+      existingSessions.map((s) => s.session_id),
     );
 
     const start = new Date(startDate);
@@ -111,7 +115,9 @@ export async function generateSessionsFromSchedules(
  * @param days - Number of days to generate sessions for
  * @returns Array of created sessions
  */
-export async function generateSessionsForNextDays(days: number): Promise<Session[]> {
+export async function generateSessionsForNextDays(
+  days: number,
+): Promise<Session[]> {
   const startDate = formatDate(new Date());
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + days);
@@ -130,7 +136,7 @@ export async function generateSessionsForCurrentMonth(): Promise<Session[]> {
 
   return generateSessionsFromSchedules(
     formatDate(startDate),
-    formatDate(endDate)
+    formatDate(endDate),
   );
 }
 
@@ -141,13 +147,13 @@ export async function generateSessionsForCurrentMonth(): Promise<Session[]> {
  */
 export async function generateSessionsForMonth(
   year: number,
-  month: number
+  month: number,
 ): Promise<Session[]> {
   const startDate = new Date(year, month, 1);
   const endDate = new Date(year, month + 1, 0);
 
   return generateSessionsFromSchedules(
     formatDate(startDate),
-    formatDate(endDate)
+    formatDate(endDate),
   );
 }

@@ -58,7 +58,12 @@ export function UploadModal({
     if (!selectedFile) return;
 
     // Validate file type
-    const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
+    const validTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+    ];
     if (!validTypes.includes(selectedFile.type)) {
       setMessage("Please upload a PDF or image file (JPG, PNG)");
       setStatus("error");
@@ -158,7 +163,7 @@ export function UploadModal({
       setStatus("success");
       setResult(processData.data);
       setMessage(
-        `Successfully processed ${processData.data.questionCount} questions!`
+        `Successfully processed ${processData.data.questionCount} questions!`,
       );
 
       // Call completion callback
@@ -174,7 +179,9 @@ export function UploadModal({
       console.error("Upload error:", error);
       setStatus("error");
       setMessage(
-        error instanceof Error ? error.message : "Failed to upload and process file"
+        error instanceof Error
+          ? error.message
+          : "Failed to upload and process file",
       );
     }
   };
@@ -222,7 +229,7 @@ export function UploadModal({
       console.error("Upload error:", error);
       setStatus("error");
       setMessage(
-        error instanceof Error ? error.message : "Failed to upload worksheet"
+        error instanceof Error ? error.message : "Failed to upload worksheet",
       );
     }
   };
@@ -249,16 +256,18 @@ export function UploadModal({
 
   // Type guard for grading result
   const isGradingResult = (res: UploadResult): res is GradingUploadResult => {
-    return res !== null && 'total_questions' in res;
+    return res !== null && "total_questions" in res;
   };
 
-  const defaultTitle = mode === "grading"
-    ? `Upload Graded Worksheet${studentName ? ` for ${studentName}` : ""}`
-    : "Upload Question Paper";
+  const defaultTitle =
+    mode === "grading"
+      ? `Upload Graded Worksheet${studentName ? ` for ${studentName}` : ""}`
+      : "Upload Question Paper";
 
-  const defaultDescription = mode === "grading"
-    ? "Upload a PDF or image of the graded worksheet to automatically analyze performance"
-    : "Upload a PDF or image file to extract questions automatically";
+  const defaultDescription =
+    mode === "grading"
+      ? "Upload a PDF or image of the graded worksheet to automatically analyze performance"
+      : "Upload a PDF or image file to extract questions automatically";
 
   return (
     <Modal
@@ -282,9 +291,9 @@ export function UploadModal({
             file
               ? "border-indigo-500 bg-indigo-50"
               : isDragging
-              ? "border-indigo-500 bg-indigo-50 scale-105"
-              : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50",
-            isProcessing && "pointer-events-none opacity-50"
+                ? "border-indigo-500 bg-indigo-50 scale-105"
+                : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50",
+            isProcessing && "pointer-events-none opacity-50",
           )}
         >
           <input
@@ -321,9 +330,13 @@ export function UploadModal({
             <div className="flex flex-col items-center gap-2">
               <Upload className="h-12 w-12 text-gray-400" />
               <p className="text-sm font-medium text-gray-900">
-                {isDragging ? "Drop file here" : "Click to upload or drag and drop"}
+                {isDragging
+                  ? "Drop file here"
+                  : "Click to upload or drag and drop"}
               </p>
-              <p className="text-xs text-gray-500">PDF, JPG, or PNG (max 10MB)</p>
+              <p className="text-xs text-gray-500">
+                PDF, JPG, or PNG (max 10MB)
+              </p>
             </div>
           )}
         </div>
@@ -342,32 +355,39 @@ export function UploadModal({
         )}
 
         {/* Success Message with Results */}
-        {status === "success" && result && mode === "grading" && isGradingResult(result) && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-green-800">{message}</p>
-                <p className="text-xs text-green-700 mt-1">
-                  {result.correct_answers} / {result.total_questions} correct
-                </p>
+        {status === "success" &&
+          result &&
+          mode === "grading" &&
+          isGradingResult(result) && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-green-800">
+                    {message}
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    {result.correct_answers} / {result.total_questions} correct
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {result.weaknesses && result.weaknesses.length > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-yellow-900 mb-1">
-                  Areas for Improvement:
-                </p>
-                <ul className="list-disc list-inside text-xs text-yellow-800">
-                  {result.weaknesses.slice(0, 3).map((weakness: string, idx: number) => (
-                    <li key={idx}>{weakness}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+              {result.weaknesses && result.weaknesses.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-yellow-900 mb-1">
+                    Areas for Improvement:
+                  </p>
+                  <ul className="list-disc list-inside text-xs text-yellow-800">
+                    {result.weaknesses
+                      .slice(0, 3)
+                      .map((weakness: string, idx: number) => (
+                        <li key={idx}>{weakness}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Success Message for Questions */}
         {status === "success" && mode === "questions" && (
@@ -388,17 +408,10 @@ export function UploadModal({
 
       {/* Footer */}
       <ModalFooter>
-        <Button
-          variant="outline"
-          onClick={handleClose}
-          disabled={isProcessing}
-        >
+        <Button variant="outline" onClick={handleClose} disabled={isProcessing}>
           Cancel
         </Button>
-        <Button
-          onClick={handleUpload}
-          disabled={!file || isProcessing}
-        >
+        <Button onClick={handleUpload} disabled={!file || isProcessing}>
           {isProcessing ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

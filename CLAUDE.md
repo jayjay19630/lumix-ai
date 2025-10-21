@@ -1,9 +1,10 @@
 I'm building Lumix - an AI-powered tutor assistant web application using Next.js 15 (App Router). This app helps tutors manage questions, grade student work, and generate personalized lesson plans using AWS AI services.
 
 TECH STACK:
+
 - Frontend: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
 - Backend: Next.js API Routes
-- AWS Services: 
+- AWS Services:
   - Amazon Bedrock (Nova model for LLM reasoning)
   - Amazon Bedrock AgentCore (for orchestration)
   - AWS Textract (OCR for document processing)
@@ -14,6 +15,7 @@ TECH STACK:
 - Authentication: AWS Cognito (or NextAuth.js for now)
 
 PROJECT STRUCTURE:
+
 ```
 lumix/
 ├── app/
@@ -146,6 +148,7 @@ DATABASE SCHEMA (DynamoDB Tables):
 KEY FEATURES TO IMPLEMENT:
 
 PHASE 1 - Core Structure:
+
 1. Set up Next.js app with TypeScript and Tailwind
 2. Create layout with:
    - Left sidebar navigation (Dashboard, Students, Questions, Schedule)
@@ -157,6 +160,7 @@ PHASE 1 - Core Structure:
 6. Set up environment variables for AWS credentials
 
 PHASE 2 - Question Bank (Tool 1):
+
 1. Question list page with search, filter by topic/difficulty
 2. Upload modal for past papers (PDF/images)
 3. API endpoint to:
@@ -169,6 +173,7 @@ PHASE 2 - Question Bank (Tool 1):
 5. Generate variant questions using Bedrock Nova
 
 PHASE 3 - Students & Grading (Tool 2):
+
 1. Students list page showing all students with performance overview
 2. Student detail page showing:
    - Profile information
@@ -184,6 +189,7 @@ PHASE 3 - Students & Grading (Tool 2):
 5. Display grading results and auto-update student weaknesses
 
 PHASE 4 - Schedule & Lesson Plans (Tool 3):
+
 1. Calendar view showing upcoming sessions based on student session schedules
 2. Click upcoming session to open lesson plan modal
 3. API endpoint to generate lesson plan:
@@ -191,9 +197,9 @@ PHASE 4 - Schedule & Lesson Plans (Tool 3):
    - Query student profile from DynamoDB
    - Query recent grade history to understand student performance
    - Use Nova reasoning to:
-     * Analyze student weaknesses
-     * Select appropriate questions from bank to create worksheet
-     * Structure lesson content to teach
+     - Analyze student weaknesses
+     - Select appropriate questions from bank to create worksheet
+     - Structure lesson content to teach
    - Generate PDF worksheet (use a library like pdfkit or jsPDF)
    - Store in S3
    - Save lesson plan to DynamoDB
@@ -201,6 +207,7 @@ PHASE 4 - Schedule & Lesson Plans (Tool 3):
 5. Download worksheet PDF
 
 PHASE 5 - AI Agent Chat:
+
 1. Chat interface in right sidebar
 2. API endpoint for agent conversations
 3. Use Bedrock Agent with action groups:
@@ -213,6 +220,7 @@ PHASE 5 - AI Agent Chat:
 5. Agent provides insights and suggestions
 
 BRANDING:
+
 - App name: Lumix ✨
 - Tagline: "Teaching brilliance, powered by AI"
 - Primary color: #6366F1 (Indigo)
@@ -221,6 +229,7 @@ BRANDING:
 - Professional, modern, clean design
 
 UI DESIGN PRINCIPLES:
+
 - Use Tailwind CSS for all styling
 - Mobile-responsive (though focus on desktop for demo)
 - Clean, spacious layout with good whitespace
@@ -231,6 +240,7 @@ UI DESIGN PRINCIPLES:
 - Accessibility: proper ARIA labels, keyboard navigation
 
 IMPORTANT AWS INTEGRATION NOTES:
+
 1. Use AWS SDK v3 (modular imports)
 2. For Bedrock Agent, use @aws-sdk/client-bedrock-agent-runtime
 3. For Bedrock LLM calls, use @aws-sdk/client-bedrock-runtime with Nova model
@@ -242,12 +252,14 @@ IMPORTANT AWS INTEGRATION NOTES:
 
 DEMO DATA:
 Pre-populate with sample data for demo:
+
 - 3 students (Alice, Bob, Charlie) with realistic performance data
 - 50 questions across 5 topics (Quadratic Equations, Trigonometry, Linear Equations, Geometry, Functions)
 - 2-3 past sessions per student
 - 1-2 upcoming sessions in schedule
 
 ENVIRONMENT VARIABLES NEEDED:
+
 ```
 AWS_REGION=us-east-1
 AWS_ACCESS_KEY_ID=your_access_key
@@ -272,6 +284,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ### **For AWS Bedrock Agent Setup:**
 ```
+
 Create an AWS Bedrock Agent configuration for Lumix with these action groups:
 
 1. query_students - Get student information and performance
@@ -283,22 +296,28 @@ Create an AWS Bedrock Agent configuration for Lumix with these action groups:
 Use Amazon Bedrock Nova Lite model (amazon.nova-lite-v1:0) for reasoning.
 Include proper IAM policies and Lambda function code if needed.
 Provide both AWS Console setup instructions AND AWS SDK code.
+
 ```
 
 ### **For PDF Generation:**
 ```
+
 Implement worksheet PDF generation for Lumix lesson plans:
+
 - Use jsPDF or pdfkit
 - Include: Header with Lumix branding, student name, date, lesson objectives
 - Format questions with proper spacing
 - Include sections: Warm-up, Main Practice, Challenge, Homework
 - Professional layout suitable for printing
 - Save to S3 and return presigned URL
+
 ```
 
 ### **For Textract OCR Processing:**
 ```
+
 Implement document processing pipeline:
+
 1. Accept PDF/image upload
 2. Upload to S3
 3. Use AWS Textract DetectDocumentText API

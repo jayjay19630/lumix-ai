@@ -16,14 +16,17 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Message is required",
         } as ApiResponse,
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Build context from conversation history
     const conversationContext = conversation
       .slice(-5) // Only use last 5 messages for context
-      .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
+      .map(
+        (msg) =>
+          `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`,
+      )
       .join("\n");
 
     // Create prompt for the AI agent
@@ -63,7 +66,7 @@ Provide a helpful, concise response. If the user asks about specific functionali
         success: false,
         error: error instanceof Error ? error.message : "Internal server error",
       } as ApiResponse,
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

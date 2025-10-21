@@ -21,12 +21,7 @@ export function QuestionDetailModal({
   if (!question) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Question Details"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Question Details" size="lg">
       <div className="space-y-6">
         {/* Question Header */}
         <div className="space-y-3">
@@ -34,7 +29,7 @@ export function QuestionDetailModal({
             <span
               className={cn(
                 "px-2 py-1 rounded text-xs font-medium",
-                getDifficultyColor(question.difficulty)
+                getDifficultyColor(question.difficulty),
               )}
             >
               {question.difficulty}
@@ -117,12 +112,8 @@ export function QuestionDetailModal({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="outline">
-            Generate Variant
-          </Button>
-          <Button>
-            Add to Lesson
-          </Button>
+          <Button variant="outline">Generate Variant</Button>
+          <Button>Add to Lesson</Button>
         </div>
       </div>
     </Modal>

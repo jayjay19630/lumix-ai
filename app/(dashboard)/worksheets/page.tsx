@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileDown, Loader2, Plus, FileText, Trash2, Download } from "lucide-react";
+import {
+  FileDown,
+  Loader2,
+  Plus,
+  FileText,
+  Trash2,
+  Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import {
@@ -98,9 +105,7 @@ export default function WorksheetsPage() {
     }));
   };
 
-  const handleDifficultyToggle = (
-    difficulty: "Easy" | "Medium" | "Hard"
-  ) => {
+  const handleDifficultyToggle = (difficulty: "Easy" | "Medium" | "Hard") => {
     setCriteria((prev) => ({
       ...prev,
       difficulty: prev.difficulty.includes(difficulty)
@@ -140,7 +145,7 @@ export default function WorksheetsPage() {
       // Generate PDF
       const result = await generateWorksheetPDF(
         questions,
-        useSections ? criteria : { ...criteria, sections: undefined }
+        useSections ? criteria : { ...criteria, sections: undefined },
       );
 
       setPdfPreview(result.pdfDataUri);
@@ -165,13 +170,20 @@ export default function WorksheetsPage() {
 
       // Create FormData to send PDF blob
       const formData = new FormData();
-      formData.append("pdf", blob, `${criteria.title.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+      formData.append(
+        "pdf",
+        blob,
+        `${criteria.title.toLowerCase().replace(/\s+/g, "-")}.pdf`,
+      );
       formData.append("title", criteria.title);
       formData.append("studentName", criteria.studentName || "");
       formData.append("topics", JSON.stringify(criteria.topics));
       formData.append("difficulty", JSON.stringify(criteria.difficulty));
       formData.append("questionCount", generatedQuestions.length.toString());
-      formData.append("questions", JSON.stringify(generatedQuestions.map(q => q.id)));
+      formData.append(
+        "questions",
+        JSON.stringify(generatedQuestions.map((q) => q.id)),
+      );
       formData.append("includeAnswerKey", criteria.includeAnswerKey.toString());
       if (useSections && criteria.sections) {
         formData.append("sections", JSON.stringify(criteria.sections));
@@ -207,7 +219,7 @@ export default function WorksheetsPage() {
       // Recreate the PDF result for download
       generateWorksheetPDF(
         generatedQuestions,
-        useSections ? criteria : { ...criteria, sections: undefined }
+        useSections ? criteria : { ...criteria, sections: undefined },
       ).then((result) => {
         downloadWorksheetPDF(result, filename);
       });
@@ -288,7 +300,8 @@ export default function WorksheetsPage() {
                 No worksheets yet
               </h3>
               <p className="text-gray-500 mb-6">
-                Create your first worksheet by clicking the &quot;Create New&quot; tab
+                Create your first worksheet by clicking the &quot;Create
+                New&quot; tab
               </p>
               <Button onClick={() => setActiveTab("create")}>
                 <Plus className="h-5 w-5 mr-2" />
@@ -298,7 +311,10 @@ export default function WorksheetsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {worksheets.map((worksheet) => (
-                <Card key={worksheet.worksheet_id} className="p-6 hover:shadow-lg transition-shadow">
+                <Card
+                  key={worksheet.worksheet_id}
+                  className="p-6 hover:shadow-lg transition-shadow"
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 mb-1">
@@ -310,11 +326,14 @@ export default function WorksheetsPage() {
                         </p>
                       )}
                       <p className="text-xs text-gray-500">
-                        {new Date(worksheet.created_at).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        {new Date(worksheet.created_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
                       </p>
                     </div>
                     <FileText className="h-8 w-8 text-indigo-200" />
@@ -354,7 +373,9 @@ export default function WorksheetsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteWorksheet(worksheet.worksheet_id)}
+                      onClick={() =>
+                        handleDeleteWorksheet(worksheet.worksheet_id)
+                      }
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -369,254 +390,260 @@ export default function WorksheetsPage() {
 
       {activeTab === "create" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Criteria Form */}
-        <Card className="p-6 space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Worksheet Criteria</h2>
+          {/* Criteria Form */}
+          <Card className="p-6 space-y-6">
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Worksheet Criteria</h2>
 
-            {/* Title */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Worksheet Title
-              </label>
-              <input
-                type="text"
-                value={criteria.title}
-                onChange={(e) =>
-                  setCriteria({ ...criteria, title: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="e.g., Algebra Practice Worksheet"
-              />
-            </div>
+              {/* Title */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Worksheet Title
+                </label>
+                <input
+                  type="text"
+                  value={criteria.title}
+                  onChange={(e) =>
+                    setCriteria({ ...criteria, title: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., Algebra Practice Worksheet"
+                />
+              </div>
 
-            {/* Student Name */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Student Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={criteria.studentName}
-                onChange={(e) =>
-                  setCriteria({ ...criteria, studentName: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                placeholder="e.g., Alice Johnson"
-              />
-            </div>
+              {/* Student Name */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Student Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={criteria.studentName}
+                  onChange={(e) =>
+                    setCriteria({ ...criteria, studentName: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., Alice Johnson"
+                />
+              </div>
 
-            {/* Topics */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Topics {isLoadingTopics && <span className="text-xs text-gray-500">(loading...)</span>}
-              </label>
-              {availableTopics.length === 0 && !isLoadingTopics ? (
-                <p className="text-sm text-gray-500 italic">
-                  No topics available. Please add questions first.
-                </p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {availableTopics.map((topic) => (
+              {/* Topics */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Topics{" "}
+                  {isLoadingTopics && (
+                    <span className="text-xs text-gray-500">(loading...)</span>
+                  )}
+                </label>
+                {availableTopics.length === 0 && !isLoadingTopics ? (
+                  <p className="text-sm text-gray-500 italic">
+                    No topics available. Please add questions first.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {availableTopics.map((topic) => (
+                      <button
+                        key={topic}
+                        onClick={() => handleTopicToggle(topic)}
+                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                          criteria.topics.includes(topic)
+                            ? "bg-indigo-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Difficulty */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Difficulty Levels
+                </label>
+                <div className="flex gap-2">
+                  {DIFFICULTIES.map((difficulty) => (
                     <button
-                      key={topic}
-                      onClick={() => handleTopicToggle(topic)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        criteria.topics.includes(topic)
+                      key={difficulty}
+                      onClick={() => handleDifficultyToggle(difficulty)}
+                      className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        criteria.difficulty.includes(difficulty)
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
-                      {topic}
+                      {difficulty}
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Difficulty */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Difficulty Levels
-              </label>
-              <div className="flex gap-2">
-                {DIFFICULTIES.map((difficulty) => (
-                  <button
-                    key={difficulty}
-                    onClick={() => handleDifficultyToggle(difficulty)}
-                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      criteria.difficulty.includes(difficulty)
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {difficulty}
-                  </button>
-                ))}
               </div>
-            </div>
 
-            {/* Question Count */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Number of Questions: {criteria.questionCount}
-              </label>
-              <input
-                type="range"
-                min="5"
-                max="30"
-                value={criteria.questionCount}
-                onChange={(e) =>
-                  setCriteria({
-                    ...criteria,
-                    questionCount: parseInt(e.target.value),
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-
-            {/* Sections */}
-            <div className="mb-4">
-              <label className="flex items-center gap-2 mb-3">
+              {/* Question Count */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Questions: {criteria.questionCount}
+                </label>
                 <input
-                  type="checkbox"
-                  checked={useSections}
-                  onChange={(e) => setUseSections(e.target.checked)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  type="range"
+                  min="5"
+                  max="30"
+                  value={criteria.questionCount}
+                  onChange={(e) =>
+                    setCriteria({
+                      ...criteria,
+                      questionCount: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  Divide into sections (Warm-up, Practice, Challenge)
-                </span>
-              </label>
+              </div>
 
-              {useSections && (
-                <div className="space-y-3 pl-6 border-l-2 border-gray-200">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Warm-up: {criteria.sections?.warmup || 0}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max={Math.floor(criteria.questionCount / 2)}
-                      value={criteria.sections?.warmup || 0}
-                      onChange={(e) =>
-                        setCriteria({
-                          ...criteria,
-                          sections: {
-                            ...criteria.sections,
-                            warmup: parseInt(e.target.value),
-                          },
-                        })
-                      }
-                      className="w-full"
-                    />
+              {/* Sections */}
+              <div className="mb-4">
+                <label className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    checked={useSections}
+                    onChange={(e) => setUseSections(e.target.checked)}
+                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Divide into sections (Warm-up, Practice, Challenge)
+                  </span>
+                </label>
+
+                {useSections && (
+                  <div className="space-y-3 pl-6 border-l-2 border-gray-200">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Warm-up: {criteria.sections?.warmup || 0}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max={Math.floor(criteria.questionCount / 2)}
+                        value={criteria.sections?.warmup || 0}
+                        onChange={(e) =>
+                          setCriteria({
+                            ...criteria,
+                            sections: {
+                              ...criteria.sections,
+                              warmup: parseInt(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Practice: {criteria.sections?.practice || 0}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max={Math.floor(criteria.questionCount / 2)}
+                        value={criteria.sections?.practice || 0}
+                        onChange={(e) =>
+                          setCriteria({
+                            ...criteria,
+                            sections: {
+                              ...criteria.sections,
+                              practice: parseInt(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Challenge: {criteria.sections?.challenge || 0}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max={Math.floor(criteria.questionCount / 2)}
+                        value={criteria.sections?.challenge || 0}
+                        onChange={(e) =>
+                          setCriteria({
+                            ...criteria,
+                            sections: {
+                              ...criteria.sections,
+                              challenge: parseInt(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Practice: {criteria.sections?.practice || 0}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max={Math.floor(criteria.questionCount / 2)}
-                      value={criteria.sections?.practice || 0}
-                      onChange={(e) =>
-                        setCriteria({
-                          ...criteria,
-                          sections: {
-                            ...criteria.sections,
-                            practice: parseInt(e.target.value),
-                          },
-                        })
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Challenge: {criteria.sections?.challenge || 0}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max={Math.floor(criteria.questionCount / 2)}
-                      value={criteria.sections?.challenge || 0}
-                      onChange={(e) =>
-                        setCriteria({
-                          ...criteria,
-                          sections: {
-                            ...criteria.sections,
-                            challenge: parseInt(e.target.value),
-                          },
-                        })
-                      }
-                      className="w-full"
-                    />
-                  </div>
+                )}
+              </div>
+
+              {/* Generate Button */}
+              <Button
+                onClick={handleGenerateWorksheet}
+                disabled={isGenerating}
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 mr-2" />
+                    Generate Worksheet
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+
+          {/* Preview */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Preview</h2>
+              {pdfPreview && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveWorksheet}
+                    variant="primary"
+                    size="sm"
+                  >
+                    Save to Library
+                  </Button>
+                  <Button onClick={handleDownload} variant="outline" size="sm">
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
                 </div>
               )}
             </div>
 
-
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerateWorksheet}
-              disabled={isGenerating}
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-5 w-5 mr-2" />
-                  Generate Worksheet
-                </>
-              )}
-            </Button>
-          </div>
-        </Card>
-
-        {/* Preview */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Preview</h2>
-            {pdfPreview && (
-              <div className="flex gap-2">
-                <Button onClick={handleSaveWorksheet} variant="primary" size="sm">
-                  Save to Library
-                </Button>
-                <Button onClick={handleDownload} variant="outline" size="sm">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
+            {pdfPreview ? (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <iframe
+                  src={pdfPreview}
+                  className="w-full h-[700px]"
+                  title="Worksheet Preview"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[700px] bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
+                <div className="text-center">
+                  <FileDown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">
+                    Configure criteria and click Generate Worksheet
+                  </p>
+                </div>
               </div>
             )}
-          </div>
-
-          {pdfPreview ? (
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <iframe
-                src={pdfPreview}
-                className="w-full h-[700px]"
-                title="Worksheet Preview"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-[700px] bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg">
-              <div className="text-center">
-                <FileDown className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">
-                  Configure criteria and click Generate Worksheet
-                </p>
-              </div>
-            </div>
-          )}
-        </Card>
+          </Card>
         </div>
       )}
     </div>

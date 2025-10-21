@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStudent, updateStudent, createGradeHistory } from "@/lib/aws/dynamodb";
+import {
+  getStudent,
+  updateStudent,
+  createGradeHistory,
+} from "@/lib/aws/dynamodb";
 import { extractTextFromDocument } from "@/lib/aws/textract";
 import { invokeNovaModel } from "@/lib/aws/bedrock";
 import { uploadToS3 } from "@/lib/aws/s3";
@@ -9,7 +13,7 @@ import type { GradingResult, GradeHistory } from "@/lib/types";
 // POST /api/students/[id]/grade - Grade a worksheet
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id: studentId } = await params;
@@ -17,10 +21,7 @@ export async function POST(
     // Get student
     const student = await getStudent(studentId);
     if (!student) {
-      return NextResponse.json(
-        { error: "Student not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
     // Parse form data
@@ -31,7 +32,7 @@ export async function POST(
     if (!file) {
       return NextResponse.json(
         { error: "Worksheet file is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -49,7 +50,7 @@ export async function POST(
     // Use AI to grade the worksheet
     const gradingResult = await gradeWorksheetWithAI(
       textractResult.extracted_text,
-      student.name
+      student.name,
     );
 
     // Update student accuracy based on grading results
@@ -64,7 +65,7 @@ export async function POST(
       // Simple moving average (can be enhanced)
       const newAccuracy = result.is_correct ? 100 : 0;
       updatedAccuracy[topic] = Math.round(
-        (currentAccuracy * currentCount + newAccuracy) / (currentCount + 1)
+        (currentAccuracy * currentCount + newAccuracy) / (currentCount + 1),
       );
     });
 
@@ -85,7 +86,7 @@ export async function POST(
         ...new Set(gradingResult.question_results.map((r) => r.topic)),
       ],
       questions_attempted: gradingResult.question_results.map(
-        (r) => r.question_id
+        (r) => r.question_id,
       ),
       score: gradingResult.score,
       graded_worksheet_url: worksheetUrl,
@@ -106,7 +107,7 @@ export async function POST(
     console.error("Error grading worksheet:", error);
     return NextResponse.json(
       { error: "Failed to grade worksheet" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -134,7 +135,7 @@ function stripMarkdownCodeBlocks(text: string): string {
  */
 async function gradeWorksheetWithAI(
   extractedText: string,
-  studentName: string
+  studentName: string,
 ): Promise<GradingResult> {
   try {
     const prompt = `You are an expert math tutor grading a student's worksheet. The student's name is ${studentName}.
@@ -191,7 +192,8 @@ Only return valid JSON, no additional text.`;
       score: "0/0",
       question_results: [],
       weaknesses: [],
-      insights: "Unable to grade worksheet automatically. Please review manually.",
+      insights:
+        "Unable to grade worksheet automatically. Please review manually.",
     };
   }
 }

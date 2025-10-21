@@ -23,7 +23,7 @@ import { Modal } from "@/components/ui/Modal";
 type ViewType = "week" | "month";
 
 export default function SchedulePage() {
-  const [viewType, setViewType] = useState<ViewType>("week");
+  const [viewType, setViewType] = useState<ViewType>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [sessions, setSessions] = useState<Session[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -32,7 +32,8 @@ export default function SchedulePage() {
 
   // Lesson Plan Modal state
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [selectedLessonPlan, setSelectedLessonPlan] = useState<LessonPlan | null>(null);
+  const [selectedLessonPlan, setSelectedLessonPlan] =
+    useState<LessonPlan | null>(null);
   const [showLessonPlanModal, setShowLessonPlanModal] = useState(false);
 
   // Calculate date range based on view type
@@ -70,7 +71,7 @@ export default function SchedulePage() {
       const endDate = format(end, "yyyy-MM-dd");
 
       const response = await fetch(
-        `/api/sessions?start_date=${startDate}&end_date=${endDate}`
+        `/api/sessions?start_date=${startDate}&end_date=${endDate}`,
       );
 
       if (!response.ok) throw new Error("Failed to fetch sessions");
@@ -90,7 +91,7 @@ export default function SchedulePage() {
       const response = await fetch("/api/students");
       if (!response.ok) throw new Error("Failed to fetch students");
       const data = await response.json();
-      setStudents(data.data || []);
+      setStudents(data.students || []);
     } catch (error) {
       console.error("Error fetching students:", error);
     }
@@ -102,7 +103,7 @@ export default function SchedulePage() {
       const endDate = format(end, "yyyy-MM-dd");
 
       const response = await fetch(
-        `/api/sessions?start_date=${startDate}&end_date=${endDate}&generate=true`
+        `/api/sessions?start_date=${startDate}&end_date=${endDate}&generate=true`,
       );
 
       if (!response.ok) throw new Error("Failed to generate sessions");
@@ -137,9 +138,7 @@ export default function SchedulePage() {
   };
 
   const getSessionsForDay = (day: Date) => {
-    return sessions.filter((session) =>
-      isSameDay(parseISO(session.date), day)
-    );
+    return sessions.filter((session) => isSameDay(parseISO(session.date), day));
   };
 
   const getStudentName = (studentId: string) => {
@@ -344,9 +343,10 @@ export default function SchedulePage() {
       )}
 
       {/* Lesson Plan Modal */}
-      {showLessonPlanModal && selectedSession && getStudent(selectedSession.student_id) && (
+      {showLessonPlanModal && selectedSession && (
         <LessonPlanModal
           session={selectedSession}
+          isOpen={showLessonPlanModal}
           student={getStudent(selectedSession.student_id)!}
           existingPlan={selectedLessonPlan || undefined}
           onClose={() => {
@@ -451,115 +451,109 @@ function AddSessionModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add Session">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Student Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Student
+          </label>
+          <select
+            value={formData.student_id}
+            onChange={(e) =>
+              setFormData({ ...formData, student_id: e.target.value })
+            }
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select a student</option>
+            {students.map((student) => (
+              <option key={student.student_id} value={student.student_id}>
+                {student.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Student Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Student
-            </label>
-            <select
-              value={formData.student_id}
-              onChange={(e) =>
-                setFormData({ ...formData, student_id: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              required
-            >
-              <option value="">Select a student</option>
-              {students.map((student) => (
-                <option key={student.student_id} value={student.student_id}>
-                  {student.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Date
+          </label>
+          <input
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            required
+          />
+        </div>
 
-          {/* Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) =>
-                setFormData({ ...formData, date: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              required
-            />
-          </div>
+        {/* Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Time
+          </label>
+          <input
+            type="time"
+            value={formData.time}
+            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            required
+          />
+        </div>
 
-          {/* Time */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Time
-            </label>
-            <input
-              type="time"
-              value={formData.time}
-              onChange={(e) =>
-                setFormData({ ...formData, time: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              required
-            />
-          </div>
+        {/* Duration */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Duration (minutes)
+          </label>
+          <input
+            type="number"
+            value={formData.duration}
+            onChange={(e) =>
+              setFormData({ ...formData, duration: parseInt(e.target.value) })
+            }
+            min="15"
+            step="15"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            required
+          />
+        </div>
 
-          {/* Duration */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Duration (minutes)
-            </label>
-            <input
-              type="number"
-              value={formData.duration}
-              onChange={(e) =>
-                setFormData({ ...formData, duration: parseInt(e.target.value) })
-              }
-              min="15"
-              step="15"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              required
-            />
-          </div>
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Notes (optional)
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) =>
+              setFormData({ ...formData, notes: e.target.value })
+            }
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+            placeholder="Any additional notes..."
+          />
+        </div>
 
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notes (optional)
-            </label>
-            <textarea
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-              placeholder="Any additional notes..."
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
-            >
-              {saving ? "Creating..." : "Create Session"}
-            </button>
-          </div>
-        </form>
-
+        {/* Actions */}
+        <div className="flex gap-3 pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+          >
+            {saving ? "Creating..." : "Create Session"}
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 }

@@ -46,7 +46,7 @@ export function Modal({
         <div
           className={cn(
             "relative w-full bg-white rounded-lg shadow-xl transform transition-all",
-            sizeClasses[size]
+            sizeClasses[size],
           )}
           onClick={(e) => e.stopPropagation()}
         >
@@ -92,7 +92,7 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
     <div
       className={cn(
         "flex items-center justify-end gap-3 pt-4 border-t border-gray-200",
-        className
+        className,
       )}
     >
       {children}
