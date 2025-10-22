@@ -15,6 +15,7 @@ questions_table = dynamodb.Table('lumix-questions')
 lesson_plans_table = dynamodb.Table('lumix-lesson-plans')
 grade_history_table = dynamodb.Table('lumix-grade-history')
 session_schedules_table = dynamodb.Table('lumix-session-schedules')
+sessions_table = dynamodb.Table('lumix-sessions')
 
 
 async def get_student_by_name(name: str) -> Optional[Dict[str, Any]]:
@@ -150,4 +151,144 @@ async def create_session_schedule(
         return item
     except Exception as e:
         print(f"Error creating session schedule: {e}")
+        raise
+
+
+async def get_sessions(
+    student_id: Optional[str] = None,
+    date_range: Optional[Dict[str, str]] = None,
+    limit: int = 50
+) -> List[Dict[str, Any]]:
+    """
+    Get sessions from the sessions table directly.
+    This is different from session_schedules which are recurring templates.
+    Sessions are actual scheduled/completed tutoring sessions.
+
+    Schema (from lumix-web):
+    - session_id (PK): format "sess_YYYYMMDD_studentId"
+    - student_id
+    - date (GSI): YYYY-MM-DD format
+    - time: HH:MM format
+    - duration: minutes
+    - lesson_plan_id (optional)
+    - schedule_id (optional): if auto-generated from recurring schedule
+    - notes (optional)
+    - created_by: "auto" | "manual"
+
+    Args:
+        student_id: Filter by student ID
+        date_range: Dict with 'start_date' and 'end_date' (YYYY-MM-DD format)
+        limit: Maximum number of sessions to return
+    """
+    try:
+        if student_id:
+            # Query using GSI
+            params = {
+                'IndexName': 'StudentIndex',
+                'KeyConditionExpression': 'student_id = :student_id',
+                'ExpressionAttributeValues': {':student_id': student_id},
+                'Limit': limit,
+                'ScanIndexForward': False  # Most recent first
+            }
+
+            # Add filter expressions for date_range
+            filter_expressions = []
+            if date_range:
+                if 'start_date' in date_range:
+                    filter_expressions.append('#date >= :start_date')
+                    params['ExpressionAttributeNames'] = {'#date': 'date'}
+                    params['ExpressionAttributeValues'][':start_date'] = date_range['start_date']
+                if 'end_date' in date_range:
+                    filter_expressions.append('#date <= :end_date')
+                    if '#date' not in params.get('ExpressionAttributeNames', {}):
+                        params['ExpressionAttributeNames'] = {'#date': 'date'}
+                    params['ExpressionAttributeValues'][':end_date'] = date_range['end_date']
+
+            if filter_expressions:
+                params['FilterExpression'] = ' AND '.join(filter_expressions)
+
+            response = sessions_table.query(**params)
+        else:
+            # Scan all sessions
+            params = {'Limit': limit}
+
+            filter_expressions = []
+            expression_values = {}
+            expression_names = {}
+
+            if date_range:
+                if 'start_date' in date_range:
+                    filter_expressions.append('#date >= :start_date')
+                    expression_names['#date'] = 'date'
+                    expression_values[':start_date'] = date_range['start_date']
+                if 'end_date' in date_range:
+                    filter_expressions.append('#date <= :end_date')
+                    expression_names['#date'] = 'date'
+                    expression_values[':end_date'] = date_range['end_date']
+
+            if filter_expressions:
+                params['FilterExpression'] = ' AND '.join(filter_expressions)
+            if expression_values:
+                params['ExpressionAttributeValues'] = expression_values
+            if expression_names:
+                params['ExpressionAttributeNames'] = expression_names
+
+            response = sessions_table.scan(**params)
+
+        return response.get('Items', [])
+    except Exception as e:
+        print(f"Error getting sessions: {e}")
+        return []
+
+
+async def create_session(
+    student_id: str,
+    session_date: str,
+    time: str,
+    duration: int,
+    lesson_plan_id: Optional[str] = None,
+    schedule_id: Optional[str] = None,
+    notes: Optional[str] = None,
+    created_by: str = "manual"
+) -> Dict[str, Any]:
+    """
+    Create a new session (actual scheduled session, not recurring template)
+
+    Aligns with existing schema from lumix-web/lib/types.ts
+
+    Args:
+        student_id: Student's ID
+        session_date: Date in YYYY-MM-DD format
+        time: Time in 24-hour format (HH:MM)
+        duration: Duration in minutes
+        lesson_plan_id: Optional linked lesson plan
+        schedule_id: Optional - if auto-generated from recurring schedule
+        notes: Optional session notes
+        created_by: "auto" or "manual" (default: "manual")
+    """
+    try:
+        # Format: sess_YYYYMMDD_studentId
+        date_formatted = session_date.replace('-', '')
+        session_id = f"sess_{date_formatted}_{student_id}"
+
+        item = {
+            'session_id': session_id,
+            'student_id': student_id,
+            'date': session_date,  # YYYY-MM-DD format
+            'time': time,
+            'duration': duration,
+            'lesson_plan_id': lesson_plan_id,
+            'schedule_id': schedule_id,
+            'notes': notes,
+            'created_by': created_by,
+            'created_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        # Remove None values
+        item = {k: v for k, v in item.items() if v is not None}
+
+        sessions_table.put_item(Item=item)
+        return item
+    except Exception as e:
+        print(f"Error creating session: {e}")
         raise

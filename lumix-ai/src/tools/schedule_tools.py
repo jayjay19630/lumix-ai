@@ -4,7 +4,12 @@ Schedule and session management tools
 from typing import Dict, Any, Optional, List
 from strands import tool
 from datetime import datetime, timedelta
-from ..utils.dynamodb_client import get_schedule as db_get_schedule, create_session_schedule
+from ..utils.dynamodb_client import (
+    get_schedule as db_get_schedule,
+    create_session_schedule,
+    get_sessions as db_get_sessions,
+    create_session as db_create_session
+)
 
 
 @tool
@@ -76,43 +81,127 @@ async def get_schedule(
 
 
 @tool
-async def create_session(
-    student_id: str,
-    day_of_week: int,
-    time: str,
-    duration: int,
-    focus_topics: List[str]
+async def get_sessions(
+    student_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    limit: int = 50
 ) -> Dict[str, Any]:
     """
-    Create a new recurring tutoring session in the schedule.
+    Get actual tutoring sessions (not recurring schedules).
+
+    IMPORTANT: Use this tool instead of get_schedule when you need to see actual scheduled/completed sessions.
+    The sessions table contains real session instances with dates, lesson plans, and metadata.
+
+    Schema aligns with lumix-web/lib/types.ts:Session
 
     Use this tool to:
-    - Add a new recurring session for a student
-    - Set up regular weekly tutoring times
+    - View upcoming sessions that need preparation
+    - Check past sessions
+    - Find sessions within a date range
+    - Identify which sessions have lesson plans ready
+
+    Args:
+        student_id: Optional - filter by specific student ID
+        start_date: Optional - start date in YYYY-MM-DD format
+        end_date: Optional - end date in YYYY-MM-DD format
+        limit: Maximum number of sessions to return (default: 50)
+
+    Returns:
+        List of sessions with dates, times, lesson plans, and preparation status
+    """
+    try:
+        date_range = None
+        if start_date or end_date:
+            date_range = {}
+            if start_date:
+                date_range['start_date'] = start_date
+            if end_date:
+                date_range['end_date'] = end_date
+
+        sessions = await db_get_sessions(
+            student_id=student_id,
+            date_range=date_range,
+            limit=limit
+        )
+
+        # Categorize sessions by preparation status
+        needs_prep = []
+        ready = []
+
+        for session in sessions:
+            if session.get('lesson_plan_id'):
+                ready.append(session)
+            else:
+                needs_prep.append(session)
+
+        return {
+            "success": True,
+            "sessions": sessions,
+            "count": len(sessions),
+            "summary": {
+                "total": len(sessions),
+                "needs_preparation": len(needs_prep),
+                "ready": len(ready)
+            },
+            "sessions_needing_prep": needs_prep,
+            "sessions_ready": ready
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "sessions": [],
+            "count": 0
+        }
+
+
+@tool
+async def create_session(
+    student_id: str,
+    session_date: str,
+    time: str,
+    duration: int,
+    lesson_plan_id: Optional[str] = None,
+    notes: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Create a new tutoring session (one-time or specific date).
+
+    Aligns with schema from lumix-web/lib/types.ts:Session
+
+    Use this tool to:
+    - Schedule a one-off tutoring session
+    - Create a session for a specific date
+    - Add a session with or without a lesson plan
 
     Args:
         student_id: Student's ID
-        day_of_week: Day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
+        session_date: Session date in YYYY-MM-DD format
         time: Session time in 24-hour format (e.g., "14:00")
         duration: Duration in minutes
-        focus_topics: List of topics to focus on
+        lesson_plan_id: Optional - link to existing lesson plan
+        notes: Optional - session notes
 
     Returns:
-        Created session schedule details
+        Created session details with session_id format: sess_YYYYMMDD_studentId
     """
     try:
-        session = await create_session_schedule(
+        session = await db_create_session(
             student_id=student_id,
-            day_of_week=day_of_week,
+            session_date=session_date,
             time=time,
             duration=duration,
-            focus_topics=focus_topics
+            lesson_plan_id=lesson_plan_id,
+            notes=notes,
+            created_by="manual"
         )
 
         return {
             "success": True,
             "session": session,
-            "message": f"Created recurring session for {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day_of_week]}s at {time}"
+            "message": f"Created session {session.get('session_id')} for {session_date} at {time}"
         }
 
     except Exception as e:
