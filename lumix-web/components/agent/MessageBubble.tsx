@@ -61,7 +61,7 @@ export function MessageBubble({ role, content, timestamp, sources }: MessageBubb
 
         {/* Timestamp */}
         {timestamp && (
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400" suppressHydrationWarning>
             {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
