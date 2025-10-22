@@ -51,6 +51,8 @@ functions:
   # Main API Gateway - handles ALL FastAPI endpoints via Mangum
   api:
     handler: src.main.handler
+    layers:
+      - Ref: PythonRequirementsLambdaLayer
     events:
       - httpApi:
           path: /{proxy+}

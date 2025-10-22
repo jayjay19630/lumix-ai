@@ -23,8 +23,10 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# Load environment variables
+# Load environment variables and export them
+set -a  # automatically export all variables
 source .env
+set +a  # stop automatically exporting
 
 # Check if AWS credentials are configured
 if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
