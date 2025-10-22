@@ -135,7 +135,7 @@ async def _tavily_search(query: str, max_results: int, filter_domains: Optional[
 async def _fallback_search(query: str, max_results: int) -> List[Dict[str, Any]]:
     """Fallback search using DuckDuckGo"""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
 
         ddgs = DDGS()
         results = []

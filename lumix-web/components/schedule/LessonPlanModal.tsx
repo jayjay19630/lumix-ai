@@ -276,17 +276,110 @@ export default function LessonPlanModal({
         // VIEW MODE
         <div className="space-y-6">
           {/* Lesson Plan Content */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Teaching Notes
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
-              {existingPlan.teaching_notes}
+          {existingPlan.teaching_notes && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Teaching Notes
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
+                {existingPlan.teaching_notes}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Focus Topics */}
-          {existingPlan.focus_topics.length > 0 && (
+          {/* Notes (from AI-generated lesson plans) */}
+          {existingPlan.notes && !existingPlan.teaching_notes && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Notes
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
+                {existingPlan.notes}
+              </div>
+            </div>
+          )}
+
+          {/* Objectives */}
+          {existingPlan.objectives && existingPlan.objectives.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Learning Objectives
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-gray-700">
+                {existingPlan.objectives.map((objective, idx) => (
+                  <li key={idx}>{objective}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Activities */}
+          {existingPlan.activities && existingPlan.activities.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Lesson Activities
+              </h3>
+              <div className="space-y-3">
+                {existingPlan.activities.map((activity, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium text-gray-900">
+                        {activity.name}
+                      </span>
+                      <span className="text-sm text-gray-500">{activity.time}</span>
+                    </div>
+                    <p className="text-sm text-gray-700">{activity.description}</p>
+                    {activity.teacher_notes && (
+                      <p className="text-xs text-gray-600 mt-1 italic">
+                        Note: {activity.teacher_notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Materials */}
+          {existingPlan.materials && existingPlan.materials.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Materials Needed
+              </h3>
+              <ul className="list-disc list-inside space-y-1 text-gray-700">
+                {existingPlan.materials.map((material, idx) => (
+                  <li key={idx}>{material}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Assessment */}
+          {existingPlan.assessment && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Assessment Strategy
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 text-gray-700">
+                {existingPlan.assessment}
+              </div>
+            </div>
+          )}
+
+          {/* Differentiation */}
+          {existingPlan.differentiation && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Differentiation
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 text-gray-700">
+                {existingPlan.differentiation}
+              </div>
+            </div>
+          )}
+
+          {/* Focus Topics (legacy field) */}
+          {existingPlan.focus_topics && existingPlan.focus_topics.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Focus Topics

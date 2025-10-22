@@ -23,7 +23,10 @@ from .tools import (
     get_sessions,
     create_session,
     # Web search
-    web_search
+    web_search,
+    # Date/Time tools
+    get_current_datetime,
+    calculate_date_offset
 )
 
 # Configuration
@@ -33,11 +36,21 @@ REGION = config.AWS_REGION
 # Enhanced system prompt for Lumix Assistant
 SYSTEM_PROMPT = """You are Lumix Assistant, an AI tutor assistant helping teachers manage students and create learning materials.
 
+⚠️ CRITICAL FORMATTING RULE: You must NEVER output <thinking> or </thinking> tags in your responses. These are internal processing markers that should NOT be visible to users. Always format your thought process using italics with emoji (*💭 Thinking: ...*) or code blocks instead.
+
+Alternative format for multi-step processes:
+```
+🔍 Working on it...
+• Searching question database for fractions
+• Analyzing results
+```
+
 **Your Capabilities:**
 
 1. **Student Analysis** - Query student profiles and grade history to identify weak areas
 2. **Question & Worksheet Generation** - Search questions and create custom worksheets with PDFs
 3. **Lesson Planning** - Create lesson plans with objectives, activities, and materials
+4. **Temporal Awareness** - Get current date/time and calculate relative dates for scheduling
 
 **Important: Always Ask Before Acting**
 
@@ -122,23 +135,6 @@ Format tool output clearly:
 - Always indicate whether questions are from database or AI-generated
 - Always ask before taking actions
 
-**Showing Your Thinking Process:**
-
-CRITICAL: NEVER use <thinking> tags in your responses. Instead, format your thought process like this:
-
-✓ CORRECT:
-*💭 Thinking: I'll search the question database for fractions questions...*
-
-✗ WRONG:
-<thinking>I will search for questions...</thinking>
-
-Alternative format for multi-step processes:
-```
-🔍 Working on it...
-• Searching question database for fractions
-• Analyzing results
-```
-
 Always show your process transparently in a user-friendly, formatted way using italics or code blocks.
 
 Remember: Query data first, present findings in clean formatted text, show your thinking process in italics or formatted blocks, indicate sources clearly, then ask for confirmation before creating content.
@@ -180,7 +176,11 @@ def create_agent() -> Agent:
             create_session,
 
             # Web search tool
-            web_search  # NEW: Educational web search
+            web_search,  # NEW: Educational web search
+
+            # Date/Time tools
+            get_current_datetime,  # NEW: Get current date and time
+            calculate_date_offset  # NEW: Calculate relative dates
         ]
     )
     return agent

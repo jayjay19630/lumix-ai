@@ -12,6 +12,7 @@ from .lesson_tools import (
 from .schedule_tools import get_schedule, create_session, get_sessions
 from .worksheet_tools import create_worksheet
 from .web_search_tool import web_search
+from .datetime_tools import get_current_datetime, calculate_date_offset
 
 __all__ = [
     # Student tools
@@ -39,4 +40,8 @@ __all__ = [
 
     # Web search
     'web_search',
+
+    # Date/Time tools
+    'get_current_datetime',
+    'calculate_date_offset',
 ]
