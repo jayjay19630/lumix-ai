@@ -12,10 +12,11 @@ import type { RecurringSessionSchedule } from "@/lib/types";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const schedule = await getSessionSchedule(params.id);
+    const { id } = await params;
+    const schedule = await getSessionSchedule(id);
 
     if (!schedule) {
       return NextResponse.json(
@@ -49,9 +50,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const updates: Partial<RecurringSessionSchedule> = {};
 
@@ -75,7 +77,7 @@ export async function PATCH(
 
     updates.updated_at = new Date().toISOString();
 
-    const updatedSchedule = await updateSessionSchedule(params.id, updates);
+    const updatedSchedule = await updateSessionSchedule(id, updates);
 
     return NextResponse.json({
       success: true,
@@ -99,10 +101,11 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await deleteSessionSchedule(params.id);
+    const { id } = await params;
+    await deleteSessionSchedule(id);
 
     return NextResponse.json({
       success: true,

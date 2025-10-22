@@ -17,14 +17,15 @@ interface WorksheetCriteria {
   };
 }
 
-interface Question {
-  question_id: string;
-  text: string;
-  topic: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  explanation?: string;
-  teaching_tips?: string;
-}
+// Commenting out unused interface - using Question type from dynamodb
+// interface Question {
+//   question_id: string;
+//   text: string;
+//   topic: string;
+//   difficulty: "Easy" | "Medium" | "Hard";
+//   explanation?: string;
+//   teaching_tips?: string;
+// }
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     const allQuestions = await queryQuestions();
 
     // Filter questions based on criteria
-    let filteredQuestions = allQuestions.filter(
+    const filteredQuestions = allQuestions.filter(
       (q) =>
         criteria.topics.includes(q.topic) &&
         criteria.difficulty.includes(q.difficulty),
@@ -96,11 +97,12 @@ export async function POST(request: NextRequest) {
 
 /**
  * Fallback: Randomly select questions
+ * Currently unused but kept for potential future use
  */
-function selectQuestionsRandomly(
-  questions: Question[],
-  count: number,
-): Question[] {
-  const shuffled = [...questions].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-}
+// function selectQuestionsRandomly(
+//   questions: Question[],
+//   count: number,
+// ): Question[] {
+//   const shuffled = [...questions].sort(() => Math.random() - 0.5);
+//   return shuffled.slice(0, count);
+// }

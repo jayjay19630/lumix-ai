@@ -8,10 +8,11 @@ import {
 // GET /api/lessons/[id] - Get a specific lesson plan
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const lessonPlan = await getLessonPlan(params.id);
+    const { id } = await params;
+    const lessonPlan = await getLessonPlan(id);
 
     if (!lessonPlan) {
       return NextResponse.json(
@@ -36,9 +37,10 @@ export async function GET(
 // PUT /api/lessons/[id] - Update a lesson plan
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { focus_topics, worksheet_id, teaching_notes } = body;
 
@@ -56,7 +58,7 @@ export async function PUT(
     if (worksheet_id !== undefined) updates.worksheet_id = worksheet_id;
     if (teaching_notes !== undefined) updates.teaching_notes = teaching_notes;
 
-    const updatedLessonPlan = await updateLessonPlan(params.id, updates);
+    const updatedLessonPlan = await updateLessonPlan(id, updates);
 
     return NextResponse.json({
       success: true,
@@ -74,10 +76,11 @@ export async function PUT(
 // DELETE /api/lessons/[id] - Delete a lesson plan
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await deleteLessonPlan(params.id);
+    const { id } = await params;
+    await deleteLessonPlan(id);
 
     return NextResponse.json({
       success: true,

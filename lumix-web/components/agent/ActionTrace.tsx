@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Search, Database, FileText, Calendar, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ActionTraceProps {
   actions: Array<{
@@ -70,7 +69,7 @@ export function ActionTrace({ actions }: ActionTraceProps) {
                   {action.input && Object.keys(action.input).length > 0 && (
                     <div className="mt-1 text-gray-600">
                       {Object.entries(action.input)
-                        .filter(([_, value]) => value !== null && value !== undefined)
+                        .filter(([, value]) => value !== null && value !== undefined)
                         .map(([key, value]) => (
                           <div key={key} className="truncate">
                             <span className="text-gray-500">{key}:</span> {String(value)}

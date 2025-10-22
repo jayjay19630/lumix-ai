@@ -7,7 +7,7 @@ import {
 import { extractDocumentText, gradeWorksheet as aiGradeWorksheet } from "@/lib/ai-service-client";
 import { uploadToS3 } from "@/lib/aws/s3";
 import { v4 as uuidv4 } from "uuid";
-import type { GradingResult, GradeHistory } from "@/lib/types";
+import type { GradeHistory } from "@/lib/types";
 
 // POST /api/students/[id]/grade - Grade a worksheet
 export async function POST(

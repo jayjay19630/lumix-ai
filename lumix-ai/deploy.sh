@@ -3,38 +3,80 @@
 
 set -e
 
-echo "===== Lumix AI Service Deployment ====="
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "======================================"
+echo "   Lumix AI Service Deployment"
+echo "======================================"
 echo ""
+
+# Check if .env file exists
+if [ ! -f .env ]; then
+    echo -e "${RED}Error: .env file not found!${NC}"
+    echo "Please create a .env file from .env.example:"
+    echo "  cp .env.example .env"
+    echo "  # Edit .env with your AWS credentials"
+    exit 1
+fi
+
+# Load environment variables
+source .env
 
 # Check if AWS credentials are configured
 if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-    echo "Error: AWS credentials not set"
+    echo -e "${RED}Error: AWS credentials not set in .env${NC}"
     echo "Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY"
     exit 1
 fi
 
 # Check deployment method
 DEPLOY_METHOD=${1:-"lambda"}
+STAGE=${2:-"dev"}
 
 case $DEPLOY_METHOD in
     lambda)
         echo "Deploying to AWS Lambda using Serverless Framework..."
+        echo "Stage: $STAGE"
         echo ""
 
-        # Install dependencies
-        if [ ! -d "node_modules" ]; then
-            echo "Installing Serverless Framework..."
+        # Check if serverless is installed
+        if ! command -v serverless &> /dev/null; then
+            echo -e "${YELLOW}Installing Serverless Framework...${NC}"
             npm install -g serverless
+        fi
+
+        # Install serverless plugins if needed
+        if [ ! -d "node_modules" ]; then
+            echo -e "${YELLOW}Installing Serverless plugins...${NC}"
             npm install --save-dev serverless-python-requirements
         fi
 
+        # Check if S3 bucket exists
+        echo "Checking S3 bucket: $S3_BUCKET_NAME"
+        if aws s3 ls "s3://$S3_BUCKET_NAME" 2>&1 | grep -q 'NoSuchBucket'; then
+            echo -e "${YELLOW}Creating S3 bucket...${NC}"
+            aws s3 mb "s3://$S3_BUCKET_NAME" --region "$AWS_REGION"
+            echo -e "${GREEN}✓ S3 bucket created${NC}"
+        else
+            echo -e "${GREEN}✓ S3 bucket exists${NC}"
+        fi
+
         # Deploy
-        echo "Deploying Lambda functions..."
-        serverless deploy
+        echo ""
+        echo -e "${YELLOW}Deploying Lambda functions...${NC}"
+        serverless deploy --stage $STAGE
 
         echo ""
-        echo "✓ Lambda deployment complete!"
-        echo "API endpoint will be shown above"
+        echo -e "${GREEN}======================================"
+        echo "   Deployment Complete!"
+        echo "======================================${NC}"
+        echo ""
+        echo "Save the API Gateway endpoint URL above"
+        echo "You'll need it for the lumix-web frontend"
         ;;
 
     docker)

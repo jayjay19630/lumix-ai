@@ -58,7 +58,7 @@ export interface Question {
 
 // Lesson Plan Types
 export type LessonStatus = "draft" | "generated" | "completed";
-export type GenerationMode = "simple" | "advanced";
+export type GenerationMode = "simple" | "advanced" | "ai-service";
 
 export interface LessonStructure {
   warmup: {
@@ -85,8 +85,8 @@ export interface LessonStructure {
 export interface LessonPlan {
   lesson_plan_id: string;
   session_id: string;
-  student_id: string;
-  date: string; // YYYY-MM-DD
+  student_id?: string; // Optional - may not always have student context
+  date?: string; // YYYY-MM-DD - Optional
   duration: number; // minutes
   created_by: "manual" | "ai";
   generation_mode?: GenerationMode; // only if AI-generated
@@ -96,6 +96,26 @@ export interface LessonPlan {
   ai_reasoning?: string; // only if AI-generated
   created_at: string;
   updated_at: string;
+
+  // AI-generated structured fields (from lesson_tools.py)
+  title?: string;
+  objectives?: string[]; // Learning objectives
+  materials?: string[]; // Materials needed
+  activities?: Array<{
+    time: string;
+    name: string;
+    description: string;
+    teacher_notes?: string;
+  }>;
+  assessment?: string; // Assessment strategy
+  differentiation?: string; // Differentiation suggestions
+  notes?: string; // Additional notes
+
+  // Legacy/compatibility fields
+  topic?: string;
+  grade_level?: string;
+  content_source_type?: string;
+  content_source_data?: string;
 }
 
 // Grade History Types
@@ -169,6 +189,7 @@ export interface QuestionResult {
 export interface Worksheet {
   worksheet_id: string;
   title: string;
+  student_name?: string;
   topics: string[];
   difficulty: ("Easy" | "Medium" | "Hard")[];
   question_count: number;

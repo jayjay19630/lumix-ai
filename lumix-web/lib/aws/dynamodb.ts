@@ -7,8 +7,6 @@ import {
   DeleteCommand,
   ScanCommand,
   QueryCommand,
-  ScanCommandInput,
-  QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 import type {
   Student,

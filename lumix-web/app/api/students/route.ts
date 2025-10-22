@@ -24,7 +24,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, grade, email, phone, schedule } = body;
+    const { name, grade, email, phone } = body;
 
     // Validate required fields
     if (!name || !grade) {
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
       email: email || undefined,
       phone: phone || undefined,
       accuracy: {}, // Empty initially
-      schedule: schedule || [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

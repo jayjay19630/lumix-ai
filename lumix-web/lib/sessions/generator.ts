@@ -3,7 +3,7 @@ import {
   createSession,
   getSessionsByDateRange,
 } from "../aws/dynamodb";
-import type { Session, RecurringSessionSchedule } from "../types";
+import type { Session } from "../types";
 
 /**
  * Generate session ID in format: sess_YYYYMMDD_studentId

@@ -287,14 +287,14 @@ export default function LessonPlanModal({
             </div>
           )}
 
-          {/* Notes (from AI-generated lesson plans) */}
-          {existingPlan.notes && !existingPlan.teaching_notes && (
+          {/* AI Reasoning (from AI-generated lesson plans) */}
+          {existingPlan.ai_reasoning && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Notes
+                AI Reasoning
               </h3>
               <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
-                {existingPlan.notes}
+                {existingPlan.ai_reasoning}
               </div>
             </div>
           )}
@@ -378,7 +378,31 @@ export default function LessonPlanModal({
             </div>
           )}
 
-          {/* Focus Topics (legacy field) */}
+          {/* Additional Notes */}
+          {existingPlan.notes && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Additional Notes
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-gray-700">
+                {existingPlan.notes}
+              </div>
+            </div>
+          )}
+
+          {/* Worksheet (if linked) */}
+          {existingPlan.worksheet_id && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Linked Worksheet
+              </h3>
+              <div className="bg-indigo-50 rounded-lg p-4 text-indigo-700">
+                Worksheet ID: {existingPlan.worksheet_id}
+              </div>
+            </div>
+          )}
+
+          {/* Focus Topics */}
           {existingPlan.focus_topics && existingPlan.focus_topics.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">

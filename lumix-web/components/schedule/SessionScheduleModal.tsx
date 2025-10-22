@@ -29,7 +29,6 @@ export function SessionScheduleModal({
   isOpen,
   onClose,
   studentId,
-  studentName,
   existingSchedule,
   onSave,
 }: SessionScheduleModalProps) {

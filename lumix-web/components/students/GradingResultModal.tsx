@@ -17,8 +17,6 @@ export function GradingResultModal({
   isOpen,
   onClose,
   gradingResult,
-  studentName,
-  date,
 }: GradingResultModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Grading Results">

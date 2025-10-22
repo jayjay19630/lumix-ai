@@ -117,7 +117,7 @@ export function parseScore(score: string): number {
   try {
     const [correct, total] = score.split("/").map(Number);
     return (correct / total) * 100;
-  } catch (error) {
+  } catch {
     return 0;
   }
 }

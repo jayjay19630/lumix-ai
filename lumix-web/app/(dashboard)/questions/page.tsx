@@ -105,8 +105,10 @@ export default function QuestionsPage() {
     }
   };
 
-  const handleUploadComplete = (questionCount: number) => {
-    console.log(`Upload complete: ${questionCount} questions added`);
+  const handleUploadComplete = (data: unknown) => {
+    const result = data as { questionCount?: number };
+    const count = result?.questionCount || 0;
+    console.log(`Upload complete: ${count} questions added`);
     // Refresh questions list
     fetchQuestions();
   };

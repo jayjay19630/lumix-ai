@@ -49,16 +49,16 @@ export function MessageBubble({ role, content, timestamp, sources }: MessageBubb
                 remarkPlugins={[remarkGfm]}
                 components={{
                   // Custom styles for markdown elements
-                  h1: ({ node, ...props }) => <h1 className="text-lg font-semibold mb-2 mt-3" {...props} />,
-                  h2: ({ node, ...props }) => <h2 className="text-base font-semibold mb-2 mt-3" {...props} />,
-                  h3: ({ node, ...props }) => <h3 className="text-sm font-semibold mb-1 mt-2" {...props} />,
-                  p: ({ node, ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
-                  ul: ({ node, ...props }) => <ul className="list-disc ml-4 mb-2 space-y-1" {...props} />,
-                  ol: ({ node, ...props }) => <ol className="list-decimal ml-4 mb-2 space-y-1" {...props} />,
-                  li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
-                  strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
-                  em: ({ node, ...props }) => <em className="italic" {...props} />,
-                  code: ({ node, className, children, ...props }) => {
+                  h1: (props) => <h1 className="text-lg font-semibold mb-2 mt-3" {...props} />,
+                  h2: (props) => <h2 className="text-base font-semibold mb-2 mt-3" {...props} />,
+                  h3: (props) => <h3 className="text-sm font-semibold mb-1 mt-2" {...props} />,
+                  p: (props) => <p className="mb-2 leading-relaxed" {...props} />,
+                  ul: (props) => <ul className="list-disc ml-4 mb-2 space-y-1" {...props} />,
+                  ol: (props) => <ol className="list-decimal ml-4 mb-2 space-y-1" {...props} />,
+                  li: (props) => <li className="leading-relaxed" {...props} />,
+                  strong: (props) => <strong className="font-semibold text-gray-900" {...props} />,
+                  em: (props) => <em className="italic" {...props} />,
+                  code: ({ className, children, ...props }) => {
                     const isInline = !className;
                     return isInline ? (
                       <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono" {...props}>
@@ -70,7 +70,7 @@ export function MessageBubble({ role, content, timestamp, sources }: MessageBubb
                       </code>
                     );
                   },
-                  a: ({ node, ...props }) => (
+                  a: (props) => (
                     <a className="text-indigo-600 hover:text-indigo-800 underline" target="_blank" rel="noopener noreferrer" {...props} />
                   ),
                 }}

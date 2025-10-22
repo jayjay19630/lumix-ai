@@ -57,6 +57,7 @@ export default function SchedulePage() {
   // Fetch sessions for current date range
   useEffect(() => {
     fetchSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate, viewType]);
 
   // Fetch students on mount

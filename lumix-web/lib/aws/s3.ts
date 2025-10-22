@@ -153,7 +153,7 @@ export async function getFileFromS3(key: string): Promise<Buffer> {
 
     // Convert stream to buffer
     const chunks: Uint8Array[] = [];
-    for await (const chunk of response.Body as any) {
+    for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
       chunks.push(chunk);
     }
 
