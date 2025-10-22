@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import { AgentSidebar } from "@/components/agent/AgentSidebar";
 import { Toaster } from "react-hot-toast";
 
 export default function DashboardLayout({
@@ -27,8 +26,7 @@ export default function DashboardLayout({
         </main>
       </div>
 
-      {/* Right AI Agent Sidebar - Only show on non-dashboard pages */}
-      {!isDashboardHome && <AgentSidebar />}
+      {/* Right AI Agent Sidebar - Removed (only available on home page as full-screen chat) */}
 
       {/* Toast notifications */}
       <Toaster position="bottom-center" />
