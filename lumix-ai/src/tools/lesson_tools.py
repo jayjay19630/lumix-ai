@@ -266,22 +266,83 @@ Format as JSON:
         # Save to database
         lesson_plans_table = dynamodb.Table('lumix-lesson-plans')
 
+        # Format teaching notes from AI lesson structure
+        teaching_notes_parts = []
+
+        # Add title if available
+        if ai_lesson.get('title'):
+            teaching_notes_parts.append(f"# {ai_lesson.get('title')}\n")
+
+        # Add objectives
+        if ai_lesson.get('objectives'):
+            teaching_notes_parts.append("## Learning Objectives")
+            for obj in ai_lesson.get('objectives', []):
+                teaching_notes_parts.append(f"- {obj}")
+            teaching_notes_parts.append("")
+
+        # Add activities with timing
+        if ai_lesson.get('activities'):
+            teaching_notes_parts.append("## Lesson Activities")
+            for activity in ai_lesson.get('activities', []):
+                time_str = activity.get('time', '')
+                name = activity.get('name', '')
+                desc = activity.get('description', '')
+                teaching_notes_parts.append(f"**{name}** ({time_str})")
+                teaching_notes_parts.append(desc)
+                if activity.get('teacher_notes'):
+                    teaching_notes_parts.append(f"*Note: {activity.get('teacher_notes')}*")
+                teaching_notes_parts.append("")
+
+        # Add materials
+        if include_materials and ai_lesson.get('materials'):
+            teaching_notes_parts.append("## Materials Needed")
+            for material in ai_lesson.get('materials', []):
+                teaching_notes_parts.append(f"- {material}")
+            teaching_notes_parts.append("")
+
+        # Add assessment
+        if include_assessment and ai_lesson.get('assessment'):
+            teaching_notes_parts.append("## Assessment")
+            teaching_notes_parts.append(ai_lesson.get('assessment'))
+            teaching_notes_parts.append("")
+
+        # Add differentiation
+        if ai_lesson.get('differentiation'):
+            teaching_notes_parts.append("## Differentiation")
+            teaching_notes_parts.append(ai_lesson.get('differentiation'))
+            teaching_notes_parts.append("")
+
+        # Add general notes if present
+        if ai_lesson.get('notes'):
+            teaching_notes_parts.append("## Additional Notes")
+            teaching_notes_parts.append(ai_lesson.get('notes'))
+
+        teaching_notes = "\n".join(teaching_notes_parts)
+
+        # Create lesson plan matching lumix-web schema
         lesson_plan = {
             "lesson_plan_id": lesson_plan_id,
-            "title": ai_lesson.get('title', f"Lesson on {topic}"),
-            "topic": topic,
             "duration": duration,
-            "grade_level": grade_level,
-            "content_source_type": content_source_type,
-            "content_source_data": content_source_data,
+            "created_by": "ai",  # Match frontend expectation
+            "teaching_notes": teaching_notes,  # Primary field expected by frontend
+            "focus_topics": [topic] if isinstance(topic, str) else topic,  # Ensure it's an array
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+
+            # Extended AI fields (optional, for richer display)
             "objectives": ai_lesson.get('objectives', []),
             "materials": ai_lesson.get('materials', []) if include_materials else [],
             "activities": ai_lesson.get('activities', []),
             "assessment": ai_lesson.get('assessment', '') if include_assessment else '',
             "differentiation": ai_lesson.get('differentiation', ''),
             "notes": ai_lesson.get('notes', ''),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "created_by": "lumix-ai"
+
+            # Legacy fields for compatibility
+            "title": ai_lesson.get('title', f"Lesson on {topic}"),
+            "topic": topic,
+            "grade_level": grade_level,
+            "content_source_type": content_source_type,
+            "content_source_data": content_source_data
         }
 
         # Only add student_id if provided (DynamoDB StudentIndex requires it to be non-null)
