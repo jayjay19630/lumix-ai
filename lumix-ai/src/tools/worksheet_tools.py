@@ -6,12 +6,31 @@ from strands import tool
 import uuid
 from datetime import datetime, timezone
 import boto3
-from ..config import AWS_REGION
+from ..config import AWS_REGION, S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 from ..utils.dynamodb_client import search_questions, get_student_by_id
 from .question_tools import generate_questions as generate_new_questions
+from botocore.config import Config
 
-dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
-s3_client = boto3.client('s3', region_name=AWS_REGION)
+dynamodb = boto3.resource(
+    'dynamodb',
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY
+)
+
+# Configure S3 client with explicit credentials and region
+s3_config = Config(
+    region_name=AWS_REGION,
+    signature_version='s3v4',
+    s3={'addressing_style': 'virtual'}
+)
+s3_client = boto3.client(
+    's3',
+    region_name=AWS_REGION,
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    config=s3_config
+)
 
 
 @tool
@@ -119,17 +138,17 @@ async def create_worksheet(
             subject=subject,
             grade_level=grade_level,
             questions=questions,
-            student_context=student_context,
-            include_answer_key=include_answer_key
+            student_context=student_context
         )
 
-        # Step 4: Upload to S3
-        bucket_name = 'lumix-worksheets'  # Configure this
-        file_key = f"worksheets/{worksheet_id}.pdf"
+        # Step 4: Upload to S3 (matching lumix-web structure)
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        filename = f"{title.lower().replace(' ', '-')}-{timestamp}.pdf"
+        file_key = f"worksheets/{worksheet_id}/{filename}"
 
         try:
             s3_client.put_object(
-                Bucket=bucket_name,
+                Bucket=S3_BUCKET_NAME,
                 Key=file_key,
                 Body=pdf_content,
                 ContentType='application/pdf'
@@ -138,7 +157,7 @@ async def create_worksheet(
             # Generate presigned URL (valid for 7 days)
             file_url = s3_client.generate_presigned_url(
                 'get_object',
-                Params={'Bucket': bucket_name, 'Key': file_key},
+                Params={'Bucket': S3_BUCKET_NAME, 'Key': file_key},
                 ExpiresIn=604800  # 7 days
             )
         except Exception as s3_error:
@@ -149,17 +168,22 @@ async def create_worksheet(
         # Step 5: Store metadata in database
         worksheets_table = dynamodb.Table('lumix-worksheets')
 
+        # Extract unique topics from questions
+        unique_topics = list(set(q.get('topic', topic) for q in questions))
+
         worksheet_metadata = {
             'worksheet_id': worksheet_id,
             'title': title,
             'subject': subject,
             'grade_level': grade_level,
             'topic': topic,
+            'topics': unique_topics if unique_topics else [topic],  # Frontend expects array
             'difficulty_level': difficulty_level,
             'question_ids': [q.get('question_id') for q in questions],
             'question_count': len(questions),
             'student_id': student_id,
             'file_url': file_url,
+            'pdf_url': file_url,  # Alias for frontend
             'format': format,
             'has_answer_key': include_answer_key,
             'created_at': datetime.now(timezone.utc).isoformat(),
@@ -176,12 +200,15 @@ async def create_worksheet(
             "success": True,
             "worksheet_id": worksheet_id,
             "file_url": file_url,
+            "pdf_url": file_url,
             "preview_url": file_url,
+            "worksheet": worksheet_metadata,  # Full metadata for frontend
             "metadata": {
                 "title": title,
                 "subject": subject,
                 "grade_level": grade_level,
                 "topic": topic,
+                "topics": unique_topics if unique_topics else [topic],
                 "question_count": len(questions),
                 "has_answer_key": include_answer_key
             },
@@ -203,129 +230,162 @@ def generate_worksheet_pdf(
     subject: str,
     grade_level: str,
     questions: List[Dict[str, Any]],
-    student_context: Optional[Dict[str, Any]] = None,
-    include_answer_key: bool = True
+    student_context: Optional[Dict[str, Any]] = None
 ) -> bytes:
     """
-    Generate a PDF worksheet using ReportLab.
+    Generate a PDF worksheet using ReportLab that matches the lumix-web format.
+
+    Mimics the jsPDF format from worksheet-generator.ts:
+    - Indigo header with Lumix branding
+    - Worksheet title and student info
+    - Questions with proper spacing
+    - Footer with page numbers
 
     Returns PDF content as bytes.
     """
     try:
-        from reportlab.lib.pagesizes import letter
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import inch
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak, Table, TableStyle
-        from reportlab.lib.enums import TA_CENTER, TA_LEFT
-        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.pdfgen.canvas import Canvas
         from io import BytesIO
+        from datetime import datetime
 
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        c = Canvas(buffer, pagesize=A4)
 
-        story = []
-        styles = getSampleStyleSheet()
+        # Page dimensions (A4 in mm)
+        page_width, page_height = A4
+        margin = 20 * mm
+        content_width = page_width - 2 * margin
 
-        # Custom styles
-        title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=18,
-            textColor=colors.HexColor('#6366F1'),
-            spaceAfter=12,
-            alignment=TA_CENTER
-        )
+        def draw_header(c, page_num, total_pages):
+            """Draw header and footer on current page"""
+            # Header - Indigo background (RGB: 99, 102, 241)
+            c.setFillColorRGB(99/255, 102/255, 241/255)
+            c.rect(0, page_height - 25*mm, page_width, 25*mm, fill=True, stroke=False)
 
-        header_style = ParagraphStyle(
-            'CustomHeader',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.grey,
-            alignment=TA_CENTER
-        )
+            # Lumix title in white
+            c.setFillColorRGB(1, 1, 1)
+            c.setFont("Helvetica-Bold", 24)
+            c.drawString(margin, page_height - 15*mm, "Lumix")
 
-        question_style = ParagraphStyle(
-            'Question',
-            parent=styles['Normal'],
-            fontSize=11,
-            spaceAfter=12,
-            leftIndent=0
-        )
+            # Subtitle
+            c.setFont("Helvetica", 10)
+            c.drawString(margin, page_height - 20*mm, "Teaching brilliance, powered by AI")
 
-        # Header
-        story.append(Paragraph("Lumix ✨", header_style))
-        story.append(Spacer(1, 0.1*inch))
-        story.append(Paragraph(title, title_style))
+            # Footer - centered page number
+            c.setFillColorRGB(0.6, 0.6, 0.6)
+            c.setFont("Helvetica", 8)
+            footer_text = f"Generated by Lumix - Page {page_num} of {total_pages}"
+            c.drawCentredString(page_width / 2, 10*mm, footer_text)
 
-        # Student info and metadata
-        info_data = [
-            ['Subject:', subject, 'Grade Level:', grade_level],
-            ['Name:', student_context.get('name', '_' * 30) if student_context else '_' * 30,
-             'Date:', '_' * 20]
-        ]
+        # Track pages for footer
+        pages_content = []
+        current_page_content = []
+        y_position = page_height - 35*mm
 
-        info_table = Table(info_data, colWidths=[1*inch, 2.5*inch, 1*inch, 2*inch])
-        info_table.setStyle(TableStyle([
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.grey),
-            ('TEXTCOLOR', (2, 0), (2, -1), colors.grey),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ]))
+        def check_new_page(required_space=20*mm):
+            nonlocal y_position, current_page_content
+            if y_position - required_space < margin + 15*mm:
+                pages_content.append(current_page_content)
+                current_page_content = []
+                y_position = page_height - 35*mm
+                return True
+            return False
 
-        story.append(info_table)
-        story.append(Spacer(1, 0.3*inch))
+        # Title
+        current_page_content.append(('title', title, y_position))
+        y_position -= 10*mm
 
-        # Instructions
-        instructions = Paragraph(
-            "<b>Instructions:</b> Answer all questions. Show your work where applicable.",
-            styles['Normal']
-        )
-        story.append(instructions)
-        story.append(Spacer(1, 0.2*inch))
+        # Student name if provided
+        student_name = student_context.get('name') if student_context else None
+        if student_name:
+            current_page_content.append(('student', student_name, y_position))
+            y_position -= 6*mm
+
+        # Date
+        today = datetime.now().strftime("%B %d, %Y")
+        current_page_content.append(('date', today, y_position))
+        y_position -= 12*mm
+
+        # Divider line
+        current_page_content.append(('line', y_position))
+        y_position -= 10*mm
 
         # Questions
         for idx, question in enumerate(questions, 1):
+            check_new_page(25*mm)
+
             q_text = question.get('text', question.get('question_text', 'Question text missing'))
+            current_page_content.append(('question', idx, q_text, y_position))
 
-            # Question number and text
-            q_paragraph = Paragraph(f"<b>{idx}.</b> {q_text}", question_style)
-            story.append(q_paragraph)
+            # Calculate space needed for question text
+            y_position -= 15*mm
 
-            # Answer space (lines for student to write)
-            story.append(Spacer(1, 0.15*inch))
-            for _ in range(3):  # 3 lines for answer
-                story.append(Paragraph('_' * 100, styles['Normal']))
-                story.append(Spacer(1, 0.1*inch))
+        # Add last page
+        pages_content.append(current_page_content)
+        total_pages = len(pages_content)
 
-            story.append(Spacer(1, 0.2*inch))
+        # Now render all pages
+        for page_num, page_content in enumerate(pages_content, 1):
+            if page_num > 1:
+                c.showPage()
 
-        # Answer key on new page
-        if include_answer_key:
-            story.append(PageBreak())
-            story.append(Paragraph("Answer Key", title_style))
-            story.append(Spacer(1, 0.2*inch))
+            draw_header(c, page_num, total_pages)
 
-            for idx, question in enumerate(questions, 1):
-                answer = question.get('answer', 'Answer not provided')
-                explanation = question.get('explanation', '')
+            for item in page_content:
+                if item[0] == 'title':
+                    c.setFillColorRGB(0, 0, 0)
+                    c.setFont("Helvetica-Bold", 18)
+                    c.drawString(margin, item[2], item[1])
 
-                answer_text = f"<b>{idx}.</b> {answer}"
-                if explanation:
-                    answer_text += f"<br/><i>Explanation: {explanation[:200]}...</i>" if len(explanation) > 200 else f"<br/><i>Explanation: {explanation}</i>"
+                elif item[0] == 'student':
+                    c.setFont("Helvetica", 12)
+                    c.drawString(margin, item[2], f"Student: {item[1]}")
 
-                story.append(Paragraph(answer_text, styles['Normal']))
-                story.append(Spacer(1, 0.15*inch))
+                elif item[0] == 'date':
+                    c.setFont("Helvetica", 10)
+                    c.drawString(margin, item[2], f"Date: {item[1]}")
 
-        # Build PDF
-        doc.build(story)
+                elif item[0] == 'line':
+                    c.setStrokeColorRGB(0.78, 0.78, 0.78)
+                    c.line(margin, item[1], page_width - margin, item[1])
 
+                elif item[0] == 'question':
+                    idx, q_text, y_pos = item[1], item[2], item[3]
+                    c.setFillColorRGB(0, 0, 0)
+                    c.setFont("Helvetica-Bold", 10)
+                    c.drawString(margin, y_pos, f"{idx}.")
+
+                    c.setFont("Helvetica", 10)
+                    # Simple text wrapping
+                    max_width = content_width - 10*mm
+                    text_object = c.beginText(margin + 7*mm, y_pos)
+                    text_object.setFont("Helvetica", 10)
+
+                    # Wrap text manually
+                    words = q_text.split()
+                    line = ""
+                    for word in words:
+                        test_line = line + word + " "
+                        if c.stringWidth(test_line, "Helvetica", 10) < max_width:
+                            line = test_line
+                        else:
+                            text_object.textLine(line)
+                            line = word + " "
+                    if line:
+                        text_object.textLine(line)
+
+                    c.drawText(text_object)
+
+        c.save()
         pdf_content = buffer.getvalue()
         buffer.close()
 
         return pdf_content
 
     except ImportError:
-        # Fallback if reportlab not installed - generate simple text-based PDF placeholder
+        # Fallback if reportlab not installed
         return generate_simple_pdf_placeholder(title, subject, questions)
 
 

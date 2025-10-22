@@ -8,7 +8,7 @@ from ..utils.dynamodb_client import get_student_by_id, get_grade_history, search
 import uuid
 from datetime import datetime, timezone
 import boto3
-from ..config import AWS_REGION
+from ..config import AWS_REGION, AWS_BEDROCK_MODEL_ID
 
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 
@@ -224,7 +224,7 @@ Format as JSON:
 }}"""
 
         response = bedrock_client.converse(
-            modelId="us.amazon.nova-lite-v1:0",
+            modelId=AWS_BEDROCK_MODEL_ID,
             messages=[{
                 "role": "user",
                 "content": [{"text": prompt}]

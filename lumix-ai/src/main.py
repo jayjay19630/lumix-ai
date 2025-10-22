@@ -251,9 +251,31 @@ async def agent_chat(request: AgentChatRequest):
         # Invoke the Lumix agent
         result = lumix_agent(request.message)
 
-        # Extract action traces from the agent's execution
+        # Extract action traces and tool results from the agent's execution
         action_traces = []
-        if hasattr(result, "tool_calls") and result.tool_calls:
+        worksheets = []  # Collect any worksheets created
+
+        # Strands Agent SDK stores execution info differently
+        # Check for tool_results attribute which contains actual tool outputs
+        if hasattr(result, "tool_results") and result.tool_results:
+            for tool_result in result.tool_results:
+                trace_item = {
+                    "tool": tool_result.get("name", "unknown"),
+                    "input": tool_result.get("input", {}),
+                    "output": tool_result.get("output", None),
+                }
+                action_traces.append(trace_item)
+
+                # Extract worksheet data if this was a worksheet creation tool
+                if tool_result.get("name") in ["create_worksheet", "create_lesson_with_worksheet"]:
+                    output = tool_result.get("output", {})
+                    if isinstance(output, dict) and output.get("success"):
+                        worksheet_data = output.get("worksheet")
+                        if worksheet_data:
+                            worksheets.append(worksheet_data)
+
+        # Fallback: Check tool_calls if tool_results not available
+        elif hasattr(result, "tool_calls") and result.tool_calls:
             for tool_call in result.tool_calls:
                 action_traces.append(
                     {
@@ -290,6 +312,7 @@ async def agent_chat(request: AgentChatRequest):
                 "response": response_text,
                 "conversation_id": request.conversation_id or "new-session",
                 "action_traces": action_traces,
+                "worksheets": worksheets,  # Return any created worksheets
                 "sources": [],  # Can be populated from tool results
             },
         }

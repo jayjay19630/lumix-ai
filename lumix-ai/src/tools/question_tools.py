@@ -117,28 +117,32 @@ For each question, provide:
 3. A detailed explanation of the solution
 4. Teaching tips for tutors
 
-Format your response as a JSON array with this structure:
+IMPORTANT: You MUST respond with ONLY valid JSON in this exact format (no additional text before or after):
+
 [
   {{
-    "question_text": "...",
-    "answer": "...",
-    "explanation": "...",
-    "teaching_tips": "..."
+    "question_text": "Simplify: 2^3 × 2^5",
+    "answer": "2^8 or 256",
+    "explanation": "When multiplying powers with the same base, add the exponents: 2^3 × 2^5 = 2^(3+5) = 2^8 = 256",
+    "teaching_tips": "Remind students that the base stays the same and only exponents are added"
   }}
 ]
 
-Ensure questions are:
-- Appropriate for the difficulty level
-- Educationally valuable
+Generate {question_count} questions following this exact JSON structure. Ensure questions are:
+- Appropriate for the {difficulty_level} difficulty level
+- Educationally valuable and curriculum-aligned
 - Clear and unambiguous
-- Aligned with standard curricula when applicable"""
+
+Return ONLY the JSON array, no markdown formatting, no code blocks, no explanatory text."""
 
         # Use Bedrock to generate questions
         import json
-        from ..services.bedrock_service import bedrock_client
+        from ..aws_clients import bedrock_client
+        from ..config import AWS_BEDROCK_MODEL_ID
 
+        # Use converse API for Nova models
         response = bedrock_client.converse(
-            modelId="us.amazon.nova-lite-v1:0",
+            modelId=AWS_BEDROCK_MODEL_ID,
             messages=[{
                 "role": "user",
                 "content": [{"text": prompt}]
@@ -151,22 +155,47 @@ Ensure questions are:
 
         response_text = response['output']['message']['content'][0]['text']
 
+        # Clean the response text (remove markdown code blocks if present)
+        cleaned_text = response_text.strip()
+
+        # Remove markdown code block markers
+        if cleaned_text.startswith('```json'):
+            cleaned_text = cleaned_text[7:]
+        elif cleaned_text.startswith('```'):
+            cleaned_text = cleaned_text[3:]
+
+        if cleaned_text.endswith('```'):
+            cleaned_text = cleaned_text[:-3]
+
+        cleaned_text = cleaned_text.strip()
+
         # Try to extract JSON from the response
         try:
             # Look for JSON array in the response
-            start_idx = response_text.find('[')
-            end_idx = response_text.rfind(']') + 1
+            start_idx = cleaned_text.find('[')
+            end_idx = cleaned_text.rfind(']') + 1
             if start_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx]
+                json_str = cleaned_text[start_idx:end_idx]
                 generated_questions = json.loads(json_str)
             else:
-                generated_questions = json.loads(response_text)
-        except json.JSONDecodeError:
+                generated_questions = json.loads(cleaned_text)
+
+            # Validate that we got a list
+            if not isinstance(generated_questions, list):
+                raise ValueError("Response is not a JSON array")
+
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"JSON parse error: {e}")
+            print(f"Response text: {response_text[:500]}")
+
+            # Fallback: Try to create questions from the response text
+            # Sometimes AI returns text even when asked for JSON
             return {
                 "success": False,
-                "error": "Failed to parse AI-generated questions",
+                "error": f"Failed to parse AI-generated questions: {str(e)}",
                 "questions": [],
-                "raw_response": response_text
+                "raw_response": response_text[:1000],  # First 1000 chars for debugging
+                "suggestion": "The AI did not return valid JSON. Try adjusting the prompt or check model configuration."
             }
 
         # Store questions in database

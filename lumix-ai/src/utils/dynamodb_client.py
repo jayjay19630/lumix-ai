@@ -4,10 +4,27 @@ DynamoDB client utilities for agent tools
 import boto3
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone
+from decimal import Decimal
 from ..config import AWS_REGION
 
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 dynamodb_client = boto3.client('dynamodb', region_name=AWS_REGION)
+
+
+def convert_decimals(obj: Any) -> Any:
+    """
+    Recursively convert Decimal objects to float for JSON serialization.
+    DynamoDB returns numbers as Decimal which aren't JSON serializable.
+    """
+    if isinstance(obj, list):
+        return [convert_decimals(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_decimals(value) for key, value in obj.items()}
+    elif isinstance(obj, Decimal):
+        # Convert to int if it's a whole number, otherwise float
+        return int(obj) if obj % 1 == 0 else float(obj)
+    else:
+        return obj
 
 # Table references
 students_table = dynamodb.Table('lumix-students')
@@ -27,7 +44,7 @@ async def get_student_by_name(name: str) -> Optional[Dict[str, Any]]:
             ExpressionAttributeValues={':name': name}
         )
         if response['Items']:
-            return response['Items'][0]
+            return convert_decimals(response['Items'][0])
         return None
     except Exception as e:
         print(f"Error getting student by name: {e}")
@@ -38,7 +55,8 @@ async def get_student_by_id(student_id: str) -> Optional[Dict[str, Any]]:
     """Get student by ID"""
     try:
         response = students_table.get_item(Key={'student_id': student_id})
-        return response.get('Item')
+        item = response.get('Item')
+        return convert_decimals(item) if item else None
     except Exception as e:
         print(f"Error getting student by ID: {e}")
         return None
@@ -48,7 +66,7 @@ async def get_all_students() -> List[Dict[str, Any]]:
     """Get all students"""
     try:
         response = students_table.scan()
-        return response.get('Items', [])
+        return convert_decimals(response.get('Items', []))
     except Exception as e:
         print(f"Error getting all students: {e}")
         return []
@@ -64,7 +82,7 @@ async def get_grade_history(student_id: str, limit: int = 10) -> List[Dict[str, 
             ScanIndexForward=False,  # Most recent first
             Limit=limit
         )
-        return response.get('Items', [])
+        return convert_decimals(response.get('Items', []))
     except Exception as e:
         print(f"Error getting grade history: {e}")
         return []
@@ -95,7 +113,7 @@ async def search_questions(
             params['ExpressionAttributeValues'] = expression_values
 
         response = questions_table.scan(**params)
-        return response.get('Items', [])
+        return convert_decimals(response.get('Items', []))
     except Exception as e:
         print(f"Error searching questions: {e}")
         return []
@@ -117,7 +135,7 @@ async def get_schedule(
         else:
             response = session_schedules_table.scan()
 
-        return response.get('Items', [])
+        return convert_decimals(response.get('Items', []))
     except Exception as e:
         print(f"Error getting schedule: {e}")
         return []
@@ -235,7 +253,7 @@ async def get_sessions(
 
             response = sessions_table.scan(**params)
 
-        return response.get('Items', [])
+        return convert_decimals(response.get('Items', []))
     except Exception as e:
         print(f"Error getting sessions: {e}")
         return []
