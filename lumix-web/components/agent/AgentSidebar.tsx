@@ -20,6 +20,14 @@ interface Message {
     output?: unknown;
   }>;
   sources?: Array<{ title: string; url: string }>;
+  worksheets?: Array<{
+    worksheet_id: string;
+    title: string;
+    topics: string[];
+    question_count: number;
+    pdf_url: string;
+    created_at: string;
+  }>;
 }
 
 export function AgentSidebar() {
@@ -83,12 +91,18 @@ export function AgentSidebar() {
           timestamp: new Date().toISOString(),
           actionTraces: data.data.action_traces || [],
           sources: data.data.sources || [],
+          worksheets: data.data.worksheets || [],
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
 
         if (data.data.conversation_id) {
           setConversationId(data.data.conversation_id);
+        }
+
+        // If worksheets were created, show success message
+        if (data.data.worksheets && data.data.worksheets.length > 0) {
+          toast.success(`Created ${data.data.worksheets.length} worksheet(s)!`);
         }
       } else {
         throw new Error(data.error || "Failed to get response");
