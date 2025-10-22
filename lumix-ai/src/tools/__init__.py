@@ -2,7 +2,7 @@
 Agent tools for Lumix AI Assistant
 """
 from .student_tools import query_students, query_grade_history
-from .question_tools import query_questions, generate_questions
+from .question_tools import query_question_topics, query_questions, generate_questions
 from .lesson_tools import (
     generate_lesson_plan,
     generate_worksheet,
@@ -19,6 +19,7 @@ __all__ = [
     'query_grade_history',
 
     # Question tools
+    'query_question_topics',
     'query_questions',
     'generate_questions',
 

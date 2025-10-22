@@ -268,12 +268,10 @@ Format as JSON:
 
         lesson_plan = {
             "lesson_plan_id": lesson_plan_id,
-            "student_id": student_id,
             "title": ai_lesson.get('title', f"Lesson on {topic}"),
             "topic": topic,
             "duration": duration,
             "grade_level": grade_level,
-            "worksheet_id": worksheet_id,
             "content_source_type": content_source_type,
             "content_source_data": content_source_data,
             "objectives": ai_lesson.get('objectives', []),
@@ -285,6 +283,14 @@ Format as JSON:
             "created_at": datetime.now(timezone.utc).isoformat(),
             "created_by": "lumix-ai"
         }
+
+        # Only add student_id if provided (DynamoDB StudentIndex requires it to be non-null)
+        if student_id:
+            lesson_plan["student_id"] = student_id
+
+        # Only add worksheet_id if provided
+        if worksheet_id:
+            lesson_plan["worksheet_id"] = worksheet_id
 
         try:
             lesson_plans_table.put_item(Item=lesson_plan)

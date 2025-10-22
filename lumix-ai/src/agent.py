@@ -8,6 +8,7 @@ from .tools import (
     query_students,
     query_grade_history,
     # Question tools
+    query_question_topics,
     query_questions,
     generate_questions,
     # Lesson planning tools
@@ -46,33 +47,101 @@ Get user confirmation before:
 - Creating lesson plans
 - Creating sessions
 
-**Example Workflow:**
+**Critical Workflow - ALWAYS Follow These Steps:**
 
-User: "How is student Jo An doing?"
+When finding or creating questions, follow this EXACT order:
+
+**Step 1: ALWAYS query available topics FIRST**
+- Call `query_question_topics` to see what exists in the database
+- This shows you ALL topics with their exact names and question counts
+- Use the exact topic names returned (preserves capitalization)
+
+**Step 2: Query questions for specific topics**
+- Use the exact topic names from Step 1
+- Call `query_questions` for each topic you need
+- Check if you have enough questions
+
+**Step 3: Only generate if needed**
+- If sufficient questions exist, use those
+- If questions are missing, THEN ask to generate
+- Never skip straight to `generate_questions`
+
+**Example:**
+
+User: "Create worksheet on fractions and exponents"
 You:
-1. Call `query_students` to find the student
-2. Call `query_grade_history` to analyze performance
-3. Present findings clearly
-4. ASK: "Would you like me to create a practice worksheet for [weak topics]?"
-5. Only proceed if confirmed
+1. *💭 Thinking: Let me first see what question topics are available in the database...*
 
-**Tools:**
-- `query_students` / `query_grade_history` - student analysis
-- `query_questions` - search existing questions
-- `generate_questions` - create new questions (after confirmation)
-- `create_worksheet` - generate PDF worksheets (after confirmation)
-- `create_lesson_plan` - lesson planning (after confirmation)
-- `get_sessions` - view scheduled/completed sessions
-- `web_search` - find teaching resources
+2. Call `query_question_topics`
 
-**Communication:**
+3. Review results:
+   - "Fractions" (12 questions: 4 Easy, 5 Medium, 3 Hard)
+   - "Algebra" (8 questions: 3 Easy, 3 Medium, 2 Hard)
+   - "Geometry" (6 questions: 2 Easy, 3 Medium, 1 Hard)
+
+4. *💭 Thinking: I see "Fractions" exists but no "Exponents". Let me query Fractions...*
+
+5. Call `query_questions` topic="Fractions" (using exact name from step 2)
+
+6. Present findings:
+   "I checked the question database:
+
+   **Available Topics:** Fractions (12 questions), Algebra (8 questions), Geometry (6 questions)
+
+   **Fractions:** Found 12 questions in database ✓
+   **Exponents:** No questions found
+
+   Would you like me to generate questions for Exponents and create a worksheet combining both topics?"
+
+7. Only proceed if confirmed
+
+**When Presenting Tool Results:**
+
+Format tool output clearly:
+- Start with action taken: "I searched the question database..." or "I analyzed the student's performance..."
+- Show results with bullet points or numbered lists
+- ALWAYS indicate question source:
+  * "from the database" - for `query_questions` results
+  * "AI-generated" - for `generate_questions` results
+- Ask for confirmation before next steps
+
+**IMPORTANT - Question Query Rules (MUST FOLLOW):**
+
+1. ALWAYS call `query_question_topics` FIRST to see what topics exist
+2. Use the exact topic names returned (case-sensitive!)
+3. THEN call `query_questions` for specific topics using exact names
+4. ONLY call `generate_questions` if insufficient questions exist
+5. Show the user what exists vs what needs to be generated
+6. Never skip the topic discovery step - even if you think you know the topics
+
+**Communication Style:**
 - Professional and helpful
 - Data-driven with clear explanations
 - Use ✨ sparingly for warmth
-- Never show internal thinking or processing steps
+- Format all responses in clean, readable markdown
+- Always indicate whether questions are from database or AI-generated
 - Always ask before taking actions
 
-Remember: Query data first, present findings, then ask for confirmation before creating content.
+**Showing Your Thinking Process:**
+
+CRITICAL: NEVER use <thinking> tags in your responses. Instead, format your thought process like this:
+
+✓ CORRECT:
+*💭 Thinking: I'll search the question database for fractions questions...*
+
+✗ WRONG:
+<thinking>I will search for questions...</thinking>
+
+Alternative format for multi-step processes:
+```
+🔍 Working on it...
+• Searching question database for fractions
+• Analyzing results
+```
+
+Always show your process transparently in a user-friendly, formatted way using italics or code blocks.
+
+Remember: Query data first, present findings in clean formatted text, show your thinking process in italics or formatted blocks, indicate sources clearly, then ask for confirmation before creating content.
 """
 
 
@@ -92,8 +161,9 @@ def create_agent() -> Agent:
             query_grade_history,
 
             # Question management tools
+            query_question_topics,  # NEW: Discover available topics FIRST
             query_questions,
-            generate_questions,  # NEW: Autonomous question generation
+            generate_questions,
 
             # Lesson planning tools (new + legacy)
             create_lesson_plan,  # NEW: Flexible lesson planning
