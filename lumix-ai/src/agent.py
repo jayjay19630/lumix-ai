@@ -12,11 +12,8 @@ from .tools import (
     query_questions,
     generate_questions,
     # Lesson planning tools
-    generate_lesson_plan,
     create_lesson_plan,
-    create_lesson_with_worksheet,
     # Worksheet tools
-    generate_worksheet,
     create_worksheet,
     # Schedule and session tools
     get_schedule,
@@ -49,7 +46,7 @@ Alternative format for multi-step processes:
 
 1. **Student Analysis** - Query student profiles and grade history to identify weak areas
 2. **Question & Worksheet Generation** - Search questions and create custom worksheets with PDFs
-3. **Lesson Planning** - Create lesson plans with objectives, activities, and materials
+3. **Lesson Planning** - Create lesson plans with objectives, activities, and materials that must be attached to existing sessions
 4. **Temporal Awareness** - Get current date/time and calculate relative dates for scheduling
 
 **Important: Always Ask Before Acting**
@@ -108,16 +105,6 @@ You:
 
 7. Only proceed if confirmed
 
-**When Presenting Tool Results:**
-
-Format tool output clearly:
-- Start with action taken: "I searched the question database..." or "I analyzed the student's performance..."
-- Show results with bullet points or numbered lists
-- ALWAYS indicate question source:
-  * "from the database" - for `query_questions` results
-  * "AI-generated" - for `generate_questions` results
-- Ask for confirmation before next steps
-
 **IMPORTANT - Question Query Rules (MUST FOLLOW):**
 
 1. ALWAYS call `query_question_topics` FIRST to see what topics exist
@@ -126,6 +113,65 @@ Format tool output clearly:
 4. ONLY call `generate_questions` if insufficient questions exist
 5. Show the user what exists vs what needs to be generated
 6. Never skip the topic discovery step - even if you think you know the topics
+
+**CRITICAL - Lesson Plan + Session Workflow:**
+
+When creating or reading sessions, follow this workflow:
+
+1. **Get current date/time FIRST**:
+   - Call `get_current_datetime()` to get today's date
+   - Use this to find or create sessions with exact date
+   - If year not specified, assume current year which you got from this tool
+
+2. If given a name when creating sessions, get student ID and do not assume ID!:
+   - Call `query_students` with the name to get student_id
+   - Use the student_id in session queries/creations
+
+3. **Example**:
+    ```
+   User: "Create a session for Jo An on January 22, 2025"
+
+   Step 1: Call query_students(name="Jo An")
+   Step 2: Extract student_id from results
+   Step 3: Call create_session(
+       student_id=<extracted_id>,
+       ...other params...
+   )
+   ```
+ 
+When creating lesson plans for sessions, follow this workflow:
+
+1. **Get session information FIRST**:
+   - Call `get_sessions` with student_id to find the session
+   - Extract the `session_id`, `date`, and `duration`
+   - If session does not exist, create it based on user needs.
+
+2. **If worksheet also required for lesson plan, create it FIRST**:
+    - Call `create_worksheet` to generate the worksheet PDF 
+
+2. **Create lesson plan with session and worksheet linkage**:
+   - Call `create_lesson_plan` with the `session_id` parameter and worksheet_id if applicable
+   - Also provide `session_date` and `student_id`
+   - The tool will automatically link the lesson plan to the session
+   
+3. **Example**:
+   ```
+   User: "Create a lesson plan for Jo An's session today with worksheet"
+
+   Step 1: Call get_current_datetime() to get today's date
+   Step 2: Call get_sessions(student_id="jo-an-id", start_date="2025-01-22")
+   Step 3: Extract session_id from results
+   Step 4: Create worksheet based on previously mentioned flow
+   Step 5: Call create_lesson_plan(
+       content_source_type="student_profile",
+       content_source_data="jo-an-id",
+       session_id="sess_20250122_joAnId",  # CRITICAL
+       session_date="2025-01-22",
+       student_id="jo-an-id",
+       worksheet_id="ws_20250122_joAnId",  # If worksheet created, CRITICAL
+       duration=45
+   )
+   ```
 
 **Communication Style:**
 - Professional and helpful
@@ -157,30 +203,27 @@ def create_agent() -> Agent:
             query_grade_history,
 
             # Question management tools
-            query_question_topics,  # NEW: Discover available topics FIRST
+            query_question_topics,
             query_questions,
             generate_questions,
 
-            # Lesson planning tools (new + legacy)
-            create_lesson_plan,  # NEW: Flexible lesson planning
-            create_lesson_with_worksheet,  # NEW: Integrated workflow
-            generate_lesson_plan,  # Legacy - kept for compatibility
+            # Lesson planning tools
+            create_lesson_plan,
 
             # Worksheet tools
-            create_worksheet,  # NEW: Complete worksheet generation with PDF
-            generate_worksheet,  # Legacy - kept for compatibility
+            create_worksheet,
 
             # Session management tools
-            get_sessions,  # NEW: Query actual sessions (FIXED)
-            get_schedule,  # Legacy: Recurring schedule templates
+            get_sessions,
+            get_schedule,
             create_session,
 
             # Web search tool
             web_search,  # NEW: Educational web search
 
             # Date/Time tools
-            get_current_datetime,  # NEW: Get current date and time
-            calculate_date_offset  # NEW: Calculate relative dates
+            get_current_datetime,
+            calculate_date_offset 
         ]
     )
     return agent

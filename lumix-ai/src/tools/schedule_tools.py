@@ -1,12 +1,11 @@
 """
 Schedule and session management tools
 """
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from strands import tool
 from datetime import datetime, timedelta
 from ..utils.dynamodb_client import (
     get_schedule as db_get_schedule,
-    create_session_schedule,
     get_sessions as db_get_sessions,
     create_session as db_create_session
 )
